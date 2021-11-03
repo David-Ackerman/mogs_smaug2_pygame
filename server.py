@@ -23,26 +23,27 @@ idCount = 0
 
 def threaded_client(conn, p, gameId: int):
     global idCount
-    conn.send(str.encode(str(p)))
 
-    reply = ""
+    # conn.send(str.encode(str(p)))
+    conn.send(pickle.dumps({
+        'player': p
+    }))
     while True:
         try:
-            data = conn.recv(4096).decode()
+            data = pickle.loads(conn.recv(4096))
             if gameId in games:
                 game: Duel = games[gameId]
                 if not data:
                     break
                 else:
-                    if data == "reset":
-                        game.resetWent()
-                    elif data != "get":
-                        game.play(p, data)
+                    if data['action'] == "get":
+                        game.setPlayerCards(data['player'], data['cards'])
 
                     conn.sendall(pickle.dumps(game))
             else:
                 break
-        except:
+        except Exception as e:
+            print(e)
             break
 
     print("Lost Connection!!")
@@ -63,7 +64,7 @@ while True:
     gameId = (idCount - 1)//2
     conn.settimeout(60)
     if idCount % 2 == 1:
-        games[gameId] = Duel(gameId)
+        games[gameId] = Duel(gameId, p)
         print("Creating a new game...")
     else:
         games[gameId].ready = True

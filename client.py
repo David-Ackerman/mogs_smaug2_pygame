@@ -52,7 +52,7 @@ class Client():
         self.handCardsPos = {'player': [
             410, height - 150], 'opponent': [width - 110, 10]}
         self.deckCardsPos = {'player': [
-            width - 110, height - 340], 'opponent': [410, 180]}
+            width - 110, height - 340], 'opponent': [410, 200]}
         self.cards = {
             'deck': [],
             'hand': [],
@@ -106,14 +106,15 @@ class Client():
         if len(cards['hand']) == 0 and len(cards['deck']) == 0 and len(cards['grave']) == 0:
             return
         if(cards['deck'] != self.opCards['deck']):
-            self.opDeckCardsSprite.empty()
+            self.opDeckCards = []
             for i in range(len(cards['deck'])):
                 self.opDeckCards.append(Card(cards['deck'][i], True, False))
                 self.opDeckCards[i].rect.x = self.deckCardsPos['opponent'][0]
                 self.opDeckCards[i].rect.y = (
-                    self.deckCardsPos['opponent'][1] + (2 * i))
-            self.opDeckCardsSprite.add(self.opDeckCards)
+                    self.deckCardsPos['opponent'][1] - (2 * i))
+            self.opDeckCardsSprite = pygame.sprite.Group(self.opDeckCards)
         if(cards['hand'] != self.opCards['hand']):
+            self.opHandCards = []
             self.opHandCardsSprite.empty()
             for i in range(len(cards['hand'])):
                 self.opHandCards.append(Card(cards['deck'][i], True, False))
@@ -142,6 +143,7 @@ class Client():
             self.handCards[-1].rect.x = self.handCardsPos['player'][0] + \
                 ((len(self.handCards) - 1) * 120)
             self.handCards[-1].rect.y = self.handCardsPos['player'][1]
+        print(self.cards['deck'])
         getAction = {
             'player': player,
             'action': 'get',
@@ -149,16 +151,16 @@ class Client():
         }
         self.duel: Duel = self.n.send(getAction)
 
-    def redrawWindow(self, win: pygame.Surface, duel: Duel, player):
+    def redrawWindow(self, win: pygame.Surface, player):
         win.fill((128, 128, 128))
 
-        if not(duel.connected()):
+        if not(self.duel.connected()):
             font = pygame.font.SysFont("comicsans", 70)
             text = font.render("Waiting for Player...", True, (255, 0, 0))
             win.blit(text, (width/2 - text.get_width() /
                             2, height/2 - text.get_height()/2))
         else:
-            self.buildOpponent(duel.getOpponentCards(player))
+            self.buildOpponent(self.duel.getOpponentCards(player))
             font = pygame.font.SysFont("sansserif", 40)
             countDeckCardsText = font.render(
                 str(len(self.deckCards)), True, (230, 230, 230))
@@ -169,15 +171,15 @@ class Client():
             win.blit(self.BOARD_BG, (400, 160))
             win.blit(
                 self.CARD_HAND, (400, height - 160))
-            self.opHandCardsSprite.update()
-            self.opHandCardsSprite.draw(self.game.window)
-            self.opDeckCardsSprite.update()
-            self.opDeckCardsSprite.draw(self.game.window)
-            self.handCardsSprite.update()
-            self.handCardsSprite.draw(self.game.window)
-            self.deckCardsSprite.update()
-            self.deckCardsSprite.draw(self.game.window)
+            # self.opDeckCardsSprite.update()
+            self.opDeckCardsSprite.draw(win)
             win.blit(self.SIDE_DETAILS, (0, 0))
+            # self.opHandCardsSprite.update()
+            self.opHandCardsSprite.draw(win)
+            # self.handCardsSprite.update()
+            self.handCardsSprite.draw(win)
+            # self.deckCardsSprite.update()
+            self.deckCardsSprite.draw(win)
             exitBtn.draw(win)
             win.blit(
                 opponentCountCardsText, (self.deckCardsPos['opponent'][0] + (100/2 - opponentCountCardsText.get_width()/2), self.deckCardsPos['opponent'][1] + 50))
@@ -222,7 +224,7 @@ class Client():
                         elif self.deckClick(pos) and self.duel.connected():
                             self.drawDeckCard(player)
                             break
-            self.redrawWindow(win, self.duel, player)
+            self.redrawWindow(win, player)
 
     def render_self(self):
         self.game.DISPLAY_H = 850

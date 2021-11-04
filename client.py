@@ -1,4 +1,5 @@
 import random
+from _thread import *
 from typing import List, Tuple
 import pygame
 from duel import Duel
@@ -16,17 +17,18 @@ pygame.display.set_caption('Client')
 
 
 class Button:
-    def __init__(self, text: str, x: int, y: int,  color: tuple[int, int, int], width: int = 160, height: int = 100):
+    def __init__(self, text: str, x: int, y: int,  color, width: int = 160, height: int = 100, radius: int = -1):
         self.text = text
         self.x = x
         self.y = y
+        self.radius = radius
         self.color = color
         self.width = width
         self.height = height
 
     def draw(self, win: pygame.Surface):
         pygame.draw.rect(
-            win, self.color, (self.x, self.y, self.width, self.height))
+            win, self.color, (self.x, self.y, self.width, self.height), border_radius=self.radius)
         font = pygame.font.SysFont("comicsans", 35)
         text = font.render(self.text, 1, (255, 255, 255))
         win.blit(text, (self.x + round(self.width/2) - round(text.get_width()/2),
@@ -42,12 +44,11 @@ class Button:
             return False
 
 
-exitBtn = Button("X", 10, 10, (250, 20, 20), 50, 50)
+exitBtn = Button("X", 10, 10, (250, 20, 20, 127), 45, 45, 8)
 
 
 class Client():
     def __init__(self, game):
-        self.step = 0
         self.initialDeckSended = False
         self.handCardsPos = {'player': [
             410, height - 150], 'opponent': [width - 110, 10]}
@@ -72,9 +73,23 @@ class Client():
         self.handCardsSprite = pygame.sprite.Group()
         self.opHandCardsSprite = pygame.sprite.Group()
         self.opDeckCardsSprite = pygame.sprite.Group()
+        self.timer = 240
+
+    def decreasingTimer(self):
+        while True:
+            if not(self.duel.isMyTurn(self.player)):
+                pass
+            if self.timer <= 0:
+                outOfTime = {
+                    'player': self.player,
+                    'action': 'changePlayerTime',
+                    'cards': self.cards
+                }
+                self.duel: Duel = self.n.send(outOfTime)
+            self.timer -= 1
+            pygame.time.delay(1000)
 
     def initDuel(self, playerDeck: list[Deck]):
-        self.step = 1
         self.playerDeck = playerDeck[:]
         self.opCards = {
             'hand': [],
@@ -135,7 +150,11 @@ class Client():
             return False
 
     def drawDeckCard(self, player):
-        if self.step == 1 and len(self.handCards) <= 5:
+        print(self.duel.isMyTurn(player),  self.duel.turn,
+              self.duel.playerTime, player)
+        if not(self.duel.isMyTurn(player)) or self.duel.turn != 1:
+            return
+        if len(self.handCards) <= 5:
             self.cards['hand'].append(self.cards['deck'].pop())
             self.handCards.append(self.deckCards.pop())
             self.handCards[-1].isBack = False
@@ -143,13 +162,12 @@ class Client():
             self.handCards[-1].rect.x = self.handCardsPos['player'][0] + \
                 ((len(self.handCards) - 1) * 120)
             self.handCards[-1].rect.y = self.handCardsPos['player'][1]
-        print(self.cards['deck'])
-        getAction = {
+        drawCard = {
             'player': player,
-            'action': 'get',
+            'action': 'drawCard',
             'cards': self.cards
         }
-        self.duel: Duel = self.n.send(getAction)
+        self.duel: Duel = self.n.send(drawCard)
 
     def redrawWindow(self, win: pygame.Surface, player):
         win.fill((128, 128, 128))
@@ -162,6 +180,8 @@ class Client():
         else:
             self.buildOpponent(self.duel.getOpponentCards(player))
             font = pygame.font.SysFont("sansserif", 40)
+            timerText = font.render(
+                "Tempo: " + str(self.timer), True, (230, 230, 230))
             countDeckCardsText = font.render(
                 str(len(self.deckCards)), True, (230, 230, 230))
             opponentCountCardsText = font.render(
@@ -171,28 +191,26 @@ class Client():
             win.blit(self.BOARD_BG, (400, 160))
             win.blit(
                 self.CARD_HAND, (400, height - 160))
-            # self.opDeckCardsSprite.update()
-            self.opDeckCardsSprite.draw(win)
             win.blit(self.SIDE_DETAILS, (0, 0))
-            # self.opHandCardsSprite.update()
+            self.opDeckCardsSprite.draw(win)
             self.opHandCardsSprite.draw(win)
-            # self.handCardsSprite.update()
             self.handCardsSprite.draw(win)
-            # self.deckCardsSprite.update()
             self.deckCardsSprite.draw(win)
+
             exitBtn.draw(win)
             win.blit(
                 opponentCountCardsText, (self.deckCardsPos['opponent'][0] + (100/2 - opponentCountCardsText.get_width()/2), self.deckCardsPos['opponent'][1] + 50))
             win.blit(
                 countDeckCardsText, (self.deckCardsPos['player'][0] + (100/2 - countDeckCardsText.get_width()/2), self.deckCardsPos['player'][1] + 50))
+            win.blit(timerText, (390 - timerText.get_width(), 15))
         pygame.display.update()
 
     def main(self):
         run = True
         clock = pygame.time.Clock()
         self.n = Network()
-        player = int(self.n.getP()['player'])
-
+        self.player = int(self.n.getP()['player'])
+        initedTimerThread = False
         while run:
             clock.tick(30)
             try:
@@ -200,7 +218,7 @@ class Client():
                     self.duel: Duel = self.n.send({'action': 'standby'})
                 else:
                     getAction = {
-                        'player': player,
+                        'player': self.player,
                         'action': 'get',
                         'cards': self.cards
                     }
@@ -211,20 +229,24 @@ class Client():
                 print("Couldn't get game", e)
                 break
 
+            if not(initedTimerThread) and self.duel.connected():
+                initedTimerThread = True
+                start_new_thread(self.decreasingTimer, ())
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = False
                     pygame.quit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     pos = pygame.mouse.get_pos()
-                    for card in self.handCards:
-                        if card.click(pos) and self.duel.connected():
-                            print('clicado no card: ', card)
-                            break
-                        elif self.deckClick(pos) and self.duel.connected():
-                            self.drawDeckCard(player)
-                            break
-            self.redrawWindow(win, player)
+                    if self.deckClick(pos) and self.duel.connected():
+                        self.drawDeckCard(self.player)
+                    else:
+                        for card in self.handCards:
+                            if card.click(pos) and self.duel.connected():
+                                print('clicado no card: ', card)
+                                break
+            self.redrawWindow(win, self.player)
 
     def render_self(self):
         self.game.DISPLAY_H = 850

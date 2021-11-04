@@ -13,7 +13,7 @@ try:
 except socket.error as e:
     str(e)
 
-s.listen()
+s.listen(4)
 print("Waiting for a connection, server started")
 
 connected = set()
@@ -37,6 +37,12 @@ def threaded_client(conn, p, gameId: int):
                     break
                 else:
                     if data['action'] == "get":
+                        game.setPlayerCards(data['player'], data['cards'])
+                    elif data['action'] == "drawCard":
+                        game.changeTurn()
+                        game.setPlayerCards(data['player'], data['cards'])
+                    elif data['action'] == "changePlayerTime":
+                        game.changePlayerTime()
                         game.setPlayerCards(data['player'], data['cards'])
 
                     conn.sendall(pickle.dumps(game))
@@ -68,6 +74,8 @@ while True:
         print("Creating a new game...")
     else:
         games[gameId].ready = True
+        games[gameId].duelInit = True
+        games[gameId].turn = 1
         p = 1
 
     start_new_thread(threaded_client, (conn, p, gameId))

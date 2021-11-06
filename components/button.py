@@ -1,36 +1,32 @@
+from typing import Tuple
 import pygame
 
-clock = pygame.time.Clock()
-font = pygame.font.SysFont("Arial", 20)
- 
- 
-class Button:
-    """Create a button, then blit the surface in the while loop"""
- 
-    def __init__(self, text,  pos, font, bg="black", feedback=""):
-        self.x, self.y = pos
-        self.font = pygame.font.SysFont("Arial", font)
-        if feedback == "":
-            self.feedback = "text"
+pygame.font.init()
+
+
+class ButtonDuels:
+    def __init__(self, text: str, x: int, y: int,  color, width: int = 160, height: int = 100, radius: int = -1):
+        self.text = text
+        self.x = x
+        self.y = y
+        self.radius = radius
+        self.color = color
+        self.width = width
+        self.height = height
+
+    def draw(self, win: pygame.Surface):
+        pygame.draw.rect(
+            win, self.color, (self.x, self.y, self.width, self.height), border_radius=self.radius)
+        font = pygame.font.SysFont("comicsans", 35)
+        text = font.render(self.text, 1, (255, 255, 255))
+        win.blit(text, (self.x + round(self.width/2) - round(text.get_width()/2),
+                 self.y + round(self.height/2) - round(text.get_height()/2)))
+
+    def click(self, pos: Tuple[int, int]):
+        x1 = pos[0]
+        y1 = pos[1]
+
+        if self.x <= x1 <= self.x + self.width and self.y <= y1 <= self.y + self.height:
+            return True
         else:
-            self.feedback = feedback
-        self.change_text(text, bg)
- 
-    def change_text(self, text, bg="black"):
-        """Change the text whe you click"""
-        self.text = self.font.render(text, 1, pygame.Color("White"))
-        self.size = self.text.get_size()
-        self.surface = pygame.Surface(self.size)
-        self.surface.fill(bg)
-        self.surface.blit(self.text, (0, 0))
-        self.rect = pygame.Rect(self.x, self.y, self.size[0], self.size[1])
- 
-    def show(self):
-        screen.blit(button1.surface, (self.x, self.y))
- 
-    def click(self, event):
-        x, y = pygame.mouse.get_pos()
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if pygame.mouse.get_pressed()[0]:
-                if self.rect.collidepoint(x, y):
-                    self.change_text(self.feedback, bg="red")
+            return False

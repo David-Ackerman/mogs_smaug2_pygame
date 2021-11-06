@@ -21,10 +21,10 @@ CARD_COMPOSE_COORD = {
 
 
 class Card(pygame.sprite.Sprite):
-    def __init__(self, card: Deck, isBack: bool, isDeckMenu: bool, isMenuDeckSelected: bool = False):
-        # Call the parent class (Sprite) constructor
+    def __init__(self, card: Deck, isBack: bool, isDeckMenu: bool, isMenuDeckSelected: bool = False, id: str = 0):
         super().__init__()
         self.card = card
+        self.cardOnDuelId = id
         self.isDeckMenu = isDeckMenu
         self.selection = 'default'
         if(self.isDeckMenu):

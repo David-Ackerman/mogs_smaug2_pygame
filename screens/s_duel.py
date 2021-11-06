@@ -28,7 +28,8 @@ exitBtn = ButtonDuels("X", 10, 10, (250, 20, 20, 127), 45, 45, 8)
 
 
 class Client():
-    def __init__(self, game):
+    def __init__(self, game, conn):
+        self.n = conn
         self.initialDeckSended = False
         self.handCardsPos = {'player': [
             410, height - 150], 'opponent': [width - 110, 10]}
@@ -157,47 +158,42 @@ class Client():
     def redrawWindow(self, win: pygame.Surface, player):
         win.fill((128, 128, 128))
 
-        if not(self.duel.connected()):
-            font = loadCustomFont(70, 'nunito-bold')
-            text = font.render("Waiting for Player...", True, (255, 0, 0))
-            win.blit(text, (width/2 - text.get_width() /
-                            2, height/2 - text.get_height()/2))
-        else:
-            self.buildOpponent(self.duel.getOpponentCards(player))
-            font = loadCustomFont(30)
-            timerText = font.render(
-                "Tempo: " + str(self.timer), True, (230, 230, 230))
-            countDeckCardsText = font.render(
-                str(len(self.deckCards)), True, (230, 230, 230))
-            opponentCountCardsText = font.render(
-                str(len(self.opCards['deck'])), True, (230, 230, 230))
-            win.blit(
-                self.CARD_HAND, (400, 0))
-            win.blit(self.BOARD_BG, (400, 160))
-            win.blit(
-                self.CARD_HAND, (400, height - 160))
-            win.blit(self.SIDE_DETAILS, (0, 0))
-            self.cardsInfo.draw(win)
-            self.opDeckCardsSprite.draw(win)
-            self.opHandCardsSprite.draw(win)
-            self.handCardsSprite.draw(win)
-            self.deckCardsSprite.draw(win)
+        self.buildOpponent(self.duel.getOpponentCards(player))
+        font = loadCustomFont(30)
+        timerText = font.render(
+            "Tempo: " + str(self.timer), True, (230, 230, 230))
+        countDeckCardsText = font.render(
+            str(len(self.deckCards)), True, (230, 230, 230))
+        opponentCountCardsText = font.render(
+            str(len(self.opCards['deck'])), True, (230, 230, 230))
+        win.blit(
+            self.CARD_HAND, (400, 0))
+        win.blit(self.BOARD_BG, (400, 160))
+        win.blit(
+            self.CARD_HAND, (400, height - 160))
+        win.blit(self.SIDE_DETAILS, (0, 0))
+        self.cardsInfo.draw(win)
+        self.opDeckCardsSprite.draw(win)
+        self.opHandCardsSprite.draw(win)
+        self.handCardsSprite.draw(win)
+        self.deckCardsSprite.draw(win)
 
-            exitBtn.draw(win)
-            win.blit(
-                opponentCountCardsText, (self.deckCardsPos['opponent'][0] + (100/2 - opponentCountCardsText.get_width()/2), self.deckCardsPos['opponent'][1] + 50))
-            win.blit(
-                countDeckCardsText, (self.deckCardsPos['player'][0] + (100/2 - countDeckCardsText.get_width()/2), self.deckCardsPos['player'][1] + 50))
-            win.blit(timerText, (390 - timerText.get_width(), 10))
+        exitBtn.draw(win)
+        win.blit(
+            opponentCountCardsText, (self.deckCardsPos['opponent'][0] + (100/2 - opponentCountCardsText.get_width()/2), self.deckCardsPos['opponent'][1] + 50))
+        win.blit(
+            countDeckCardsText, (self.deckCardsPos['player'][0] + (100/2 - countDeckCardsText.get_width()/2), self.deckCardsPos['player'][1] + 50))
+        win.blit(timerText, (390 - timerText.get_width(), 10))
         pygame.display.update()
 
-    def main(self):
-        run = True
-        clock = pygame.time.Clock()
-        self.n = Network()
+    def render_self(self):
+        self.duel: Duel = self.n.send({'action': 'standby'})
+        self.run_display = True
+        self.initDuel()
         self.player = int(self.n.getP()['player'])
+        clock = pygame.time.Clock()
         initedTimerThread = False
-        while run:
+        while self.duel.connected() and self.run_display:
             clock.tick(30)
             try:
                 if self.initialDeckSended:
@@ -211,7 +207,7 @@ class Client():
                     self.duel: Duel = self.n.send(getAction)
                     self.initialDeckSended = True
             except Exception as e:
-                run = False
+                self.run_display = False
                 print("Couldn't get game", e)
                 break
 
@@ -242,27 +238,3 @@ class Client():
                                 break
                             i += 1
             self.redrawWindow(win, self.player)
-
-    def render_self(self):
-        self.game.DISPLAY_H = 850
-        self.game.window = win
-        self.game.display = surf
-        self.runDisplay = True
-        clock = pygame.time.Clock()
-        deck = loadDeckOnDisk()["deck"]
-        while self.runDisplay:
-            clock.tick(30)
-            win.fill((128, 128, 128))
-            font = loadCustomFont(60, 'nunito-bold')
-            text = font.render("Click to search a duel!", 1, (255, 40, 67))
-            win.blit(text, (width/2 - text.get_width() /
-                            2, height/2 - text.get_height()/2))
-            pygame.display.update()
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    self.runDisplay = False
-        self.initDuel(deck)
-        self.main()

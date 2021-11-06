@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 from screens.menu import *
 from client import Client
+from services.getFont import loadCustomFont
 from services.saveDeck import loadDeckOnDisk
 
 
@@ -49,12 +50,24 @@ class Game:
     def reset_keys(self):
         self.UP_KEY, self.DOWN_KEY, self.BACK_KEY, self.START_KEY, self.CLICKED = False, False, False, False, False
 
-    def draw_text(self, text, size, x, y):
-        font = pygame.font.Font(self.font_name, size)
+    def draw_text(self, text, size, x, y, font='nunito'):
+        font = loadCustomFont(size, font)
         text_surface = font.render(text, True, self.WHITE)
         text_rect = text_surface.get_rect()
         text_rect.center = (x, y)
         self.display.blit(text_surface, text_rect)
+
+    def goToMenuScreen(self):
+        print('executed quit')
+        del self.player
+        response = loadDeckOnDisk()
+        self.main_menu = MainMenu(self)
+        self.deck_menu = DeckMenu(self, playerDeck=response["deck"])
+        self.options_menu = OptionsMenu(self)
+        self.credits_menu = CreditsMenu(self)
+        self.player = Client(self)
+        self.curr_screen = self.main_menu
+        self.curr_screen.render_self()
 
 
 g = Game()

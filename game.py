@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 from screens.menu import *
 from client import Client
+from screens.s_duel import DuelGame
 from services.getFont import loadCustomFont
 from services.saveDeck import loadDeckOnDisk
 
@@ -12,9 +13,9 @@ class Game:
         self.running, self.playing = True, False
         self.UP_KEY, self.DOWN_KEY, self.START_KEY, self.BACK_KEY, self.CLICKED = False, False, False, False, False
         self.DISPLAY_W, self.DISPLAY_H = 1280, 880
-        self.display = pygame.Surface((self.DISPLAY_W, self.DISPLAY_H))
         self.window = pygame.display.set_mode(
             ((self.DISPLAY_W, self.DISPLAY_H)))
+        pygame.display.set_caption('Masters of Gamblers')
         self.font_name = pygame.font.get_default_font()
         self.BLACK, self.WHITE = (0, 0, 0), (255, 255, 255)
         response = loadDeckOnDisk()
@@ -22,7 +23,6 @@ class Game:
         self.deck_menu = DeckMenu(self, playerDeck=response["deck"])
         self.options_menu = OptionsMenu(self)
         self.credits_menu = CreditsMenu(self)
-        # self.player = Player(self, playerDeck=response["deck"])
         self.player = Client(self)
         self.curr_screen = self.main_menu
 
@@ -55,20 +55,22 @@ class Game:
         text_surface = font.render(text, True, self.WHITE)
         text_rect = text_surface.get_rect()
         text_rect.center = (x, y)
-        self.display.blit(text_surface, text_rect)
+        self.window.blit(text_surface, text_rect)
 
     def goToMenuScreen(self):
-        print('executed quit')
-        del self.player
-        response = loadDeckOnDisk()
-        self.main_menu = MainMenu(self)
-        self.deck_menu = DeckMenu(self, playerDeck=response["deck"])
-        self.options_menu = OptionsMenu(self)
-        self.credits_menu = CreditsMenu(self)
+        self.BACK_KEY = True
+        self.curr_screen = ""
+        self.player = ''
         self.player = Client(self)
+        self.main_menu = MainMenu(self)
         self.curr_screen = self.main_menu
+        self.reset_keys()
         self.curr_screen.render_self()
 
 
-g = Game()
-g.curr_screen.render_self()
+def initGame():
+    g = Game()
+    g.curr_screen.render_self()
+
+
+initGame()

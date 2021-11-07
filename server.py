@@ -24,7 +24,6 @@ idCount = 0
 def threaded_client(conn, p, gameId: int):
     global idCount
 
-    # conn.send(str.encode(str(p)))
     conn.send(pickle.dumps({
         'player': p
     }))
@@ -36,7 +35,9 @@ def threaded_client(conn, p, gameId: int):
                 if not data:
                     break
                 else:
-                    if data['action'] == "get":
+                    if data['action'] == 'quit':
+                        break
+                    elif data['action'] == "get":
                         game.setPlayerCards(data['player'], data['cards'])
                     elif data['action'] == "drawCard":
                         game.changeTurn()

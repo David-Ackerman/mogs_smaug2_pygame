@@ -1,3 +1,4 @@
+from typing import Type
 import pygame
 import pygame_widgets
 from pygame_widgets.button import Button
@@ -5,7 +6,6 @@ from components.card import Card
 from interfaces.card_model import Deck
 from interfaces.cards import cards
 from services.saveDeck import saveDeckOnDisk
-
 breaks = [1, 2, 3, 4, 5]
 
 
@@ -21,7 +21,7 @@ class Menu:
         self.game.draw_text("*", 15, self.cursor_rect.x, self.cursor_rect.y)
 
     def blit_screen(self):
-        self.game.window.blit(self.game.display, (0, 0))
+        self.game.window.blit(self.game.window, (0, 0))
         pygame.display.update()
         self.game.reset_keys()
 
@@ -41,7 +41,7 @@ class MainMenu(Menu):
         while self.run_display:
             self.game.check_events()
             self.check_input()
-            self.game.display.fill(self.game.BLACK)
+            self.game.window.fill(self.game.BLACK)
             self.game.draw_text(
                 "Main Menu", 40, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 - 80)
             self.game.draw_text("Start Game", 20, self.startx, self.starty)
@@ -116,7 +116,7 @@ class OptionsMenu(Menu):
         while self.run_display:
             self.game.check_events()
             self.check_input()
-            self.game.display.fill(self.game.BLACK)
+            self.game.window.fill(self.game.BLACK)
             self.game.draw_text(
                 "Options", 40, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 - 50)
             self.game.draw_text("Volume", 20, self.volx, self.voly)
@@ -162,7 +162,7 @@ class DeckMenu(Menu):
                 self.row += 1
                 self.column = 0
         self.button = Button(
-            self.game.display,
+            self.game.window,
             1100,
             650,
             100,
@@ -182,11 +182,11 @@ class DeckMenu(Menu):
             self.game.check_events()
             events = pygame.event.get()
             self.check_input()
-            self.game.display.fill(self.game.BLACK)
+            self.game.window.fill(self.game.BLACK)
             self.game.draw_text(
                 "Monte seu deck clicando nas cartas que deseja", 40, self.game.DISPLAY_W / 2, 40)
             self.all_sprites_list.update()
-            self.all_sprites_list.draw(self.game.display)
+            self.all_sprites_list.draw(self.game.window)
             pygame_widgets.update(events)
             self.blit_screen()
 
@@ -221,7 +221,7 @@ class CreditsMenu(Menu):
             if self.game.START_KEY or self.game.BACK_KEY:
                 self.game.curr_screen = self.game.main_menu
                 self.run_display = False
-            self.game.display.fill(self.game.BLACK)
+            self.game.window.fill(self.game.BLACK)
             self.game.draw_text(
                 "Credits", 40, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 - 50)
             self.game.draw_text("Made by master of gamblers", 15,

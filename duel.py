@@ -41,12 +41,14 @@ class Duel:
             self.player1 = {
                 'deck': newCards['deck'],
                 'hand': newCards['hand'],
+                'field': newCards['field'],
                 'grave': newCards['grave']
             }
         else:
             self.player2 = {
                 'deck': newCards['deck'],
                 'hand': newCards['hand'],
+                'field': newCards['field'],
                 'grave': newCards['grave']
             }
 

@@ -1,36 +1,35 @@
 from typing import Tuple
 import pygame
+from pygame import surface
 
 from interfaces.card_model import Deck
+from services.getFont import loadCustomFont
 
 
 CARD_WIDTH = {'default': 100, 'deckMenu': 104}
 CARD_HEIGHT = {'default': 140, 'deckMenu': 144}
 CARD_COMPOSE_COORD = {
     'default': {
-        'template': (0, 0),
-        'cardIcon': (4, 9),
-        'power': (55, CARD_HEIGHT['default'] - 12)
+        'template': {'default': (0, 0), 'flipped': (0, 0)},
+        'cardIcon': {'default': (4, 9), 'flipped': (4, CARD_HEIGHT['default'] - 122)},
+        'power': {'default': (55, CARD_HEIGHT['default'] - 14), 'flipped': (55, 1)}
     },
     'deckMenu': {
-        'template': (2, 2),
-        'cardIcon': (6, 11),
-        'power': (57, CARD_HEIGHT['deckMenu'] - 14)
+        'template': {'default': (2, 2)},
+        'cardIcon': {'default': (6, 11)},
+        'power': {'default': (57, CARD_HEIGHT['deckMenu'] - 14)}
     }
 }
 
 
 class Card(pygame.sprite.Sprite):
-    def __init__(self, card: Deck, isBack: bool, isDeckMenu: bool, isMenuDeckSelected: bool = False, id: str = 0):
+    def __init__(self, card: Deck, isBack: bool, isDeckMenu: bool, isMenuDeckSelected: bool = False, id: str = '0', flip=False):
         super().__init__()
-        self.card = card
-        self.cardOnDuelId = id
-        self.isDeckMenu = isDeckMenu
-        self.selection = 'default'
-        if(self.isDeckMenu):
-            self.selection = 'deckMenu'
+        self.card, self.flipped, self.cardOnDuelId, self.isDeckMenu = card, flip, id, isDeckMenu
+        self.selection = 'deckMenu' if self.isDeckMenu else 'default'
+        self.textPos = 'flipped' if self.flipped else 'default'
         self.coords = CARD_COMPOSE_COORD[self.selection]
-        self.myfont = pygame.font.Font(pygame.font.get_default_font(), 12)
+        self.myfont = loadCustomFont(14, 'nunito-bold')
         self.surf = pygame.Surface(
             (CARD_WIDTH[self.selection], CARD_HEIGHT[self.selection]))
         self.cardImg = card['imageName']
@@ -47,26 +46,34 @@ class Card(pygame.sprite.Sprite):
         y1 = pos[1]
         y = self.rect.y
         x = self.rect.x
-        if x <= x1 <= x + CARD_WIDTH['default'] and y <= y1 <= y + CARD_HEIGHT['default']:
+        if x <= x1 <= x + CARD_WIDTH[self.selection] and y <= y1 <= y + CARD_HEIGHT[self.selection]:
             return True
         else:
             return False
 
     def build_card(self):
         if self.isBack:
-            self.surf.blit(pygame.image.load('assets/card.png'), (0, 0))
+            img = pygame.image.load('assets/card.png')
+            if self.flipped:
+                img = pygame.transform.flip(img, False, True)
+            self.surf.blit(img, (0, 0))
         else:
             if(self.isDeckMenu):
                 if(self.menuDeckSelected):
                     self.surf.fill((20, 200, 40))
                 else:
                     self.surf.fill((20, 20, 20))
-            self.surf.blit(pygame.image.load(
-                'assets/cardFront.png'), self.coords['template'])
-            self.surf.blit(pygame.image.load(self.cardImg),
-                           self.coords['cardIcon'])
-            self.surf.blit(self.myfont.render(str(self.power),
-                           True, (0, 0, 0)),  self.coords['power'])
+            bgImg = pygame.image.load('assets/cardFront.png')
+            cardImg = pygame.image.load(self.cardImg)
+            textSurf = self.myfont.render(str(self.power),
+                                          True, (50, 50, 50))
+            if self.flipped:
+                bgImg = pygame.transform.flip(bgImg, False, True)
+                cardImg = pygame.transform.flip(cardImg, False, True)
+                textSurf = pygame.transform.flip(textSurf, False, True)
+            self.surf.blit(bgImg, self.coords['template'][self.textPos])
+            self.surf.blit(cardImg, self.coords['cardIcon'][self.textPos])
+            self.surf.blit(textSurf,  self.coords['power'][self.textPos])
 
     def setSelectedOnDeckMenu(self):
         self.menuDeckSelected = not self.menuDeckSelected

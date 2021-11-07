@@ -10,13 +10,23 @@ from components.card import Card
 from network import Network
 from services.getFont import loadCustomFont
 from services.saveDeck import loadDeckOnDisk
-pygame.font.init()
 
 width = 1280
 height = 880
-surf = pygame.Surface((width, height))
-win = pygame.display.set_mode((width, height))
-pygame.display.set_caption('Client')
+handCardsPos = {'player': [
+    410, height - 150], 'opponent': [width - 110, 10]}
+deckCardsPos = {'player': [
+    width - 110, height - 340], 'opponent': [410, 200]}
+fieldCardPos = {
+    'playerFront': [600, 450],
+    'opFront': [width - 342, 304],
+    'playerSupport': [600, 584],
+    'opSupport': [width - 342, 172],
+}
+
+BOARD_BG = pygame.image.load("assets/duelBoard.png")
+CARD_HAND = pygame.image.load("assets/cardHand.png")
+SIDE_DETAILS = pygame.image.load("assets/sideDetails.png")
 
 phase = {
     1: 'Draw Phase',
@@ -24,41 +34,43 @@ phase = {
     3: 'Battle Phase',
 }
 
+
 exitBtn = ButtonDuels("X", 10, 10, (250, 20, 20, 127), 45, 45, 8)
 
 
-class Client():
-    def __init__(self, game, conn):
-        self.n = conn
-        self.initialDeckSended = False
-        self.handCardsPos = {'player': [
-            410, height - 150], 'opponent': [width - 110, 10]}
-        self.deckCardsPos = {'player': [
-            width - 110, height - 340], 'opponent': [410, 200]}
+class DuelGame():
+    def __init__(self, game, conn: Network, player: int, duel: Duel):
+        self.n, self.player, self.duel, self.game = conn, player, duel, game
+        self.initialDeckSended, self.finishThread, self.timer, self.myTurn = False, False, 240, self.duel.isMyTurn(
+            self.player)
         self.cards = {
             'deck': [],
             'hand': [],
+            'field': {
+                'front': [],
+                'support': []
+            },
             'grave': []
         }
-        self.handCards: List[Card] = []
-        self.deckCards: List[Card] = []
-        self.graveCards: List[Card] = []
-        self.opHandCards: List[Card] = []
-        self.opDeckCards: List[Card] = []
-        self.opGraceCards: List[Card] = []
-        self.game = game
-        self.BOARD_BG = pygame.image.load("assets/duelBoard.png")
-        self.CARD_HAND = pygame.image.load("assets/cardHand.png")
-        self.SIDE_DETAILS = pygame.image.load("assets/sideDetails.png")
-        self.deckCardsSprite = pygame.sprite.Group()
-        self.handCardsSprite = pygame.sprite.Group()
-        self.opHandCardsSprite = pygame.sprite.Group()
-        self.opDeckCardsSprite = pygame.sprite.Group()
-        self.cardsInfo = CardsInfo()
-        self.timer = 240
+        self.handCards, self.deckCards, self.graveCards, self.opHandCards, self.opDeckCards, self.opGraceCards = list[Card](
+        ), list[Card](), list[Card](), list[Card](), list[Card](), list[Card]()
+        self.fieldCards, self.opFieldCards = {
+            'front': list[Card](),
+            'support': list[Card]()
+        }, {
+            'front': list[Card](),
+            'support': list[Card]()
+        }
+        self.BOARD_BG, self.CARD_HAND, self.SIDE_DETAILS = BOARD_BG, CARD_HAND, SIDE_DETAILS
+        self.deckCardsSprite, self.handCardsSprite, self.fieldCardsSprite, self.graveCardsSprite, self.opHandCardsSprite, self.opFieldCardsSprite, self.opGraveCardsSprite, self.opDeckCardsSprite = pygame.sprite.Group(
+        ), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group()
+
+        self.cardsInfo = CardsInfo(self.summonCard)
 
     def decreasingTimer(self):
         while True:
+            if self.finishThread:
+                break
             if self.timer <= 0:
                 outOfTime = {
                     'player': self.player,
@@ -66,18 +78,25 @@ class Client():
                     'cards': self.cards
                 }
                 self.duel: Duel = self.n.send(outOfTime)
-            if self.duel.isMyTurn(self.player):
+                self.timer = 240
+            if self.myTurn:
                 self.timer -= 1
             pygame.time.delay(1000)
 
-    def showCardsInfo(self, cards: List[Card], isMyHand: bool = False, cardPos: int = -1):
-        print('showCardDetails', cards, isMyHand, cardPos)
-        self.cardsInfo.updateDraw(cards, cardPos)
+    def showCardsInfo(self, cards: List[Card], isField: bool = False, isMyHand: bool = False, cardPos: int = -1):
+        if cardPos == - 1:
+            cardPos = len(cards) - 1
+        self.cardsInfo.updateDraw(
+            cards, cardPos, self.myTurn, self.duel.turn,  isField, isMyHand)
 
     def initDuel(self, playerDeck: list[Deck]):
         self.playerDeck = playerDeck[:]
         self.opCards = {
             'hand': [],
+            'field': {
+                'front': [],
+                'support': []
+            },
             'deck': [],
             'grave': []
         }
@@ -87,17 +106,17 @@ class Client():
             self.cards['deck'].append(self.playerDeck[i])
             self.deckCards.append(
                 Card(self.playerDeck[i], True, False, id=idCard))
-            self.deckCards[i].rect.x = self.deckCardsPos['player'][0]
+            self.deckCards[i].rect.x = deckCardsPos['player'][0]
             self.deckCards[i].rect.y = (
-                self.deckCardsPos['player'][1] - (2 * i))
+                deckCardsPos['player'][1] - (2 * i))
         for i in range(4):
             self.cards['hand'].append(self.cards['deck'].pop())
             self.handCards.append(self.deckCards.pop())
             self.handCards[i].isBack = False
             self.handCards[i].build_card()
-            self.handCards[i].rect.x = self.handCardsPos['player'][0] + \
+            self.handCards[i].rect.x = handCardsPos['player'][0] + \
                 (i * 120)
-            self.handCards[i].rect.y = self.handCardsPos['player'][1]
+            self.handCards[i].rect.y = handCardsPos['player'][1]
 
         self.handCardsSprite.add(self.handCards)
         self.deckCardsSprite.add(self.deckCards)
@@ -110,50 +129,102 @@ class Client():
         if(cards['deck'] != self.opCards['deck']):
             self.opDeckCards = []
             for i in range(len(cards['deck'])):
-                self.opDeckCards.append(Card(cards['deck'][i], True, False))
-                self.opDeckCards[i].rect.x = self.deckCardsPos['opponent'][0]
+                self.opDeckCards.append(
+                    Card(cards['deck'][i], True, False, flip=True))
+                self.opDeckCards[i].rect.x = deckCardsPos['opponent'][0]
                 self.opDeckCards[i].rect.y = (
-                    self.deckCardsPos['opponent'][1] - (2 * i))
+                    deckCardsPos['opponent'][1] - (2 * i))
             self.opDeckCardsSprite = pygame.sprite.Group(self.opDeckCards)
         if(cards['hand'] != self.opCards['hand']):
             self.opHandCards = []
             self.opHandCardsSprite.empty()
             for i in range(len(cards['hand'])):
-                self.opHandCards.append(Card(cards['deck'][i], True, False))
-                self.opHandCards[i].rect.x = self.handCardsPos['opponent'][0] - \
+                self.opHandCards.append(
+                    Card(cards['hand'][i], True, False, flip=True))
+                self.opHandCards[i].rect.x = handCardsPos['opponent'][0] - \
                     (i * 120)
-                self.opHandCards[i].rect.y = self.handCardsPos['opponent'][1]
+                self.opHandCards[i].rect.y = handCardsPos['opponent'][1]
             self.opHandCardsSprite.add(self.opHandCards)
+        if(cards['field']['front'] != self.opCards['field']['front']):
+            self.opFieldCards['front'] = []
+            self.opFieldCardsSprite.empty()
+            for i in range(len(cards['field']['front'])):
+                self.opFieldCards['front'].append(
+                    Card(cards['field']['front'][i], False, False, flip=True))
+                self.opFieldCards['front'][i].rect.x = fieldCardPos['opFront'][0] - \
+                    (i * 135)
+                self.opFieldCards['front'][i].rect.y = fieldCardPos['opFront'][1]
+            self.opFieldCardsSprite.add(self.opFieldCards['front'])
+        if(cards['field']['support'] != self.opCards['field']['support']):
+            self.opFieldCards['support'] = []
+            self.opFieldCardsSprite.empty()
+            for i in range(len(cards['field']['support'])):
+                self.opFieldCards['support'].append(
+                    Card(cards['field']['support'][i], True, False, flip=True))
+                self.opFieldCards['support'][i].rect.x = fieldCardPos['opSupport'][0] - \
+                    (i * 135)
+                self.opFieldCards['support'][i].rect.y = fieldCardPos['opSupport'][1]
+            self.opFieldCardsSprite.add(self.opFieldCards['support'])
         self.opCards = cards
 
     def deckClick(self, pos: Tuple[int, int]):
         x1 = pos[0]
         y1 = pos[1]
-        y = self.deckCardsPos['player'][1]
-        x = self.deckCardsPos['player'][0]
+        y = deckCardsPos['player'][1]
+        x = deckCardsPos['player'][0]
         if x <= x1 <= x + 100 and y <= y1 <= y + 140:
             return True
         else:
             return False
 
     def drawDeckCard(self, player):
-        if not(self.duel.isMyTurn(player)) or self.duel.turn != 1:
-            self.showCardsInfo([self.deckCards], True)
+        if not(self.myTurn) or self.duel.turn != 1:
             return
         if len(self.handCards) <= 5:
             self.cards['hand'].append(self.cards['deck'].pop())
             self.handCards.append(self.deckCards.pop())
             self.handCards[-1].isBack = False
             self.handCards[-1].build_card()
-            self.handCards[-1].rect.x = self.handCardsPos['player'][0] + \
+            self.handCards[-1].rect.x = handCardsPos['player'][0] + \
                 ((len(self.handCards) - 1) * 120)
-            self.handCards[-1].rect.y = self.handCardsPos['player'][1]
+            self.handCards[-1].rect.y = handCardsPos['player'][1]
         drawCard = {
             'player': player,
             'action': 'drawCard',
             'cards': self.cards
         }
         self.duel: Duel = self.n.send(drawCard)
+
+    def updateHandPos(self):
+        for i in range(len(self.handCards)):
+            self.handCards[i].rect.x = handCardsPos['player'][0] + (i * 120)
+            self.handCards[i].rect.y = handCardsPos['player'][1]
+
+    def summonCard(self, cardPos: int):
+        posString = 'player'
+        if self.handCards[cardPos].card['card_type'] == 'magic':
+            fieldType = 'support'
+        else:
+            fieldType = 'front'
+        if len(self.fieldCards[fieldType]) > 2:
+            return
+        posString += fieldType.capitalize()
+        self.cards['field'][fieldType].append(self.cards['hand'].pop(cardPos))
+        self.fieldCards[fieldType].append(self.handCards.pop(cardPos))
+        self.fieldCards[fieldType][-1].rect.x = fieldCardPos[posString][0] + \
+            ((len(self.fieldCards[fieldType]) - 1) * 135)
+        self.fieldCards[fieldType][-1].rect.y = fieldCardPos[posString][1]
+        summonCard = {
+            'player': self.player,
+            'action': 'get',
+            'cards': self.cards
+        }
+        self.duel: Duel = self.n.send(summonCard)
+        self.updateHandPos()
+        if cardPos + 1 > len(self.handCards):
+            cardPos = -1
+        self.showCardsInfo(self.handCards, False, True, cardPos)
+        self.fieldCardsSprite.add(self.fieldCards[fieldType])
 
     def redrawWindow(self, win: pygame.Surface, player):
         win.fill((128, 128, 128))
@@ -175,22 +246,24 @@ class Client():
         self.cardsInfo.draw(win)
         self.opDeckCardsSprite.draw(win)
         self.opHandCardsSprite.draw(win)
+        self.opFieldCardsSprite.draw(win)
+        self.fieldCardsSprite.draw(win)
         self.handCardsSprite.draw(win)
         self.deckCardsSprite.draw(win)
 
         exitBtn.draw(win)
         win.blit(
-            opponentCountCardsText, (self.deckCardsPos['opponent'][0] + (100/2 - opponentCountCardsText.get_width()/2), self.deckCardsPos['opponent'][1] + 50))
+            opponentCountCardsText, (deckCardsPos['opponent'][0] + (100/2 - opponentCountCardsText.get_width()/2), deckCardsPos['opponent'][1] + 50))
         win.blit(
-            countDeckCardsText, (self.deckCardsPos['player'][0] + (100/2 - countDeckCardsText.get_width()/2), self.deckCardsPos['player'][1] + 50))
-        win.blit(timerText, (390 - timerText.get_width(), 10))
+            countDeckCardsText, (deckCardsPos['player'][0] + (100/2 - countDeckCardsText.get_width()/2), deckCardsPos['player'][1] + 50))
+        if self.myTurn:
+            win.blit(timerText, (390 - timerText.get_width(), 10))
         pygame.display.update()
 
     def render_self(self):
-        self.duel: Duel = self.n.send({'action': 'standby'})
         self.run_display = True
-        self.initDuel()
-        self.player = int(self.n.getP()['player'])
+        deck = loadDeckOnDisk()["deck"]
+        self.initDuel(deck)
         clock = pygame.time.Clock()
         initedTimerThread = False
         while self.duel.connected() and self.run_display:
@@ -210,31 +283,35 @@ class Client():
                 self.run_display = False
                 print("Couldn't get game", e)
                 break
-
+            self.myTurn = self.duel.isMyTurn(self.player)
             if not(initedTimerThread) and self.duel.connected():
                 initedTimerThread = True
                 self.threadId = _thread.start_new_thread(
                     self.decreasingTimer, ())
+            self.check_events()
+            self.redrawWindow(self.game.window, self.player)
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    pos = pygame.mouse.get_pos()
-                    if not(self.duel.connected()):
-                        break
-                    if exitBtn.click(pos):
-                        run = False
-                        self.runDisplay = False
-                        self.game.goToMenuScreen()
-                        _thread.exit()
-                    elif self.deckClick(pos):
-                        self.drawDeckCard(self.player)
-                    else:
-                        i = 0
-                        for card in self.handCards:
-                            if card.click(pos):
-                                self.showCardsInfo(self.handCards, True, i)
-                                break
-                            i += 1
-            self.redrawWindow(win, self.player)
+    def check_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                pos = pygame.mouse.get_pos()
+
+                self.cardsInfo.checkClicks(pos)
+                if exitBtn.click(pos):
+                    self.run_display = False
+                    self.finishThread = True
+                    self.n.send({'action': 'quit'})
+                    self.game.goToMenuScreen()
+                    break
+                elif self.deckClick(pos):
+                    self.drawDeckCard(self.player)
+                else:
+                    i = 0
+                    for card in self.handCards:
+                        if card.click(pos):
+                            self.showCardsInfo(
+                                self.handCards, isMyHand=True, cardPos=i)
+                            break
+                        i += 1

@@ -1,11 +1,13 @@
 from typing import Tuple
 import pygame
 
+from services.getFont import loadCustomFont
+
 pygame.font.init()
 
 
 class ButtonDuels:
-    def __init__(self, text: str, x: int, y: int,  color, width: int = 160, height: int = 100, radius: int = -1):
+    def __init__(self, text: str, x: int, y: int,  color, width: int = 160, height: int = 100, radius: int = -1, textSize: int = 35, textColor=(255, 255, 255)):
         self.text = text
         self.x = x
         self.y = y
@@ -13,12 +15,14 @@ class ButtonDuels:
         self.color = color
         self.width = width
         self.height = height
+        self.textSize = textSize
+        self.textColor = textColor
 
     def draw(self, win: pygame.Surface):
         pygame.draw.rect(
             win, self.color, (self.x, self.y, self.width, self.height), border_radius=self.radius)
-        font = pygame.font.SysFont("comicsans", 35)
-        text = font.render(self.text, 1, (255, 255, 255))
+        font = loadCustomFont(self.textSize, 'nunito-bold')
+        text = font.render(self.text, True, self.textColor)
         win.blit(text, (self.x + round(self.width/2) - round(text.get_width()/2),
                  self.y + round(self.height/2) - round(text.get_height()/2)))
 

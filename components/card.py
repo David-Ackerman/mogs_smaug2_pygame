@@ -6,18 +6,20 @@ from interfaces.card_model import Deck
 from services.getFont import loadCustomFont
 
 
-CARD_WIDTH = {'default': 100, 'deckMenu': 104}
-CARD_HEIGHT = {'default': 140, 'deckMenu': 144}
+CARD_WIDTH = {'default': 100, 'deckMenu': 200}
+CARD_HEIGHT = {'default': 140, 'deckMenu': 280}
+
+
 CARD_COMPOSE_COORD = {
     'default': {
-        'template': {'default': (0, 0), 'flipped': (0, 0)},
-        'cardIcon': {'default': (4, 9), 'flipped': (4, CARD_HEIGHT['default'] - 122)},
-        'power': {'default': (55, CARD_HEIGHT['default'] - 14), 'flipped': (55, 1)}
+        'template': (0, 0),
+        'cardIcon': (8, 12),
+        'power': (55, CARD_HEIGHT['default'] - 16),
     },
     'deckMenu': {
-        'template': {'default': (2, 2)},
-        'cardIcon': {'default': (6, 11)},
-        'power': {'default': (57, CARD_HEIGHT['deckMenu'] - 14)}
+        'template': (2, 2),
+        'cardIcon': (10, 13),
+        'power': (57, CARD_HEIGHT['deckMenu'] - 16),
     }
 }
 
@@ -27,15 +29,11 @@ class Card(pygame.sprite.Sprite):
         super().__init__()
         self.card, self.flipped, self.cardOnDuelId, self.isDeckMenu = card, flip, id, isDeckMenu
         self.selection = 'deckMenu' if self.isDeckMenu else 'default'
-        self.textPos = 'flipped' if self.flipped else 'default'
         self.coords = CARD_COMPOSE_COORD[self.selection]
         self.myfont = loadCustomFont(14, 'nunito-bold')
         self.surf = pygame.Surface(
             (CARD_WIDTH[self.selection], CARD_HEIGHT[self.selection]))
-        self.cardImg = card['imageName']
         self.menuDeckSelected = isMenuDeckSelected
-        self.type = card['card_type']
-        self.power = card['card_power']
         self.isBack = isBack
         self.build_card()
         self.image = self.surf
@@ -52,10 +50,13 @@ class Card(pygame.sprite.Sprite):
             return False
 
     def build_card(self):
+        cardType = self.card['card_element']
         if self.isBack:
-            img = pygame.image.load('assets/card.png')
+            img = pygame.image.load('assets/cardTemplates/cardBack.png')
             if self.flipped:
                 img = pygame.transform.flip(img, False, True)
+            img = pygame.transform.scale(img, (100, 140))
+
             self.surf.blit(img, (0, 0))
         else:
             if(self.isDeckMenu):
@@ -63,17 +64,21 @@ class Card(pygame.sprite.Sprite):
                     self.surf.fill((20, 200, 40))
                 else:
                     self.surf.fill((20, 20, 20))
-            bgImg = pygame.image.load('assets/cardFront.png')
-            cardImg = pygame.image.load(self.cardImg)
-            textSurf = self.myfont.render(str(self.power),
-                                          True, (50, 50, 50))
+            cardPath = 'assets/cardTemplates/cardFront-' + \
+                ('normal' if cardType == 'knight' or cardType ==
+                 None else cardType) + '.png'
+            # print(cardPath)
+            bgImg = pygame.image.load(cardPath)
+            bgImg = pygame.transform.scale(bgImg, (100, 140))
+            cardImg = pygame.image.load(self.card['card_image'])
+            cardImg = pygame.transform.scale(cardImg, (82, 102))
+            # textSurf = self.myfont.render(str(self.power),
+            #                               True, (50, 50, 50))
+            self.surf.blit(bgImg, self.coords['template'])
+            self.surf.blit(cardImg, self.coords['cardIcon'])
+            # self.surf.blit(textSurf,  self.coords['power'])
             if self.flipped:
-                bgImg = pygame.transform.flip(bgImg, False, True)
-                cardImg = pygame.transform.flip(cardImg, False, True)
-                textSurf = pygame.transform.flip(textSurf, False, True)
-            self.surf.blit(bgImg, self.coords['template'][self.textPos])
-            self.surf.blit(cardImg, self.coords['cardIcon'][self.textPos])
-            self.surf.blit(textSurf,  self.coords['power'][self.textPos])
+                self.surf = pygame.transform.flip(self.surf, False, True)
 
     def setSelectedOnDeckMenu(self):
         self.menuDeckSelected = not self.menuDeckSelected

@@ -6,7 +6,7 @@ from components.card import Card
 from interfaces.card_model import Deck
 from interfaces.cards import cards
 from services.saveDeck import saveDeckOnDisk
-breaks = [1, 2, 3, 4, 5]
+breaks = [1, 2, 3, 4, 5, 6, 7]
 
 
 class Menu:
@@ -18,11 +18,12 @@ class Menu:
         self.offset = -100
 
     def draw_cursor(self):
-        self.game.draw_text("*", 15, self.cursor_rect.x, self.cursor_rect.y)
+        self.game.draw_text("*", 30, self.cursor_rect.x,
+                            self.cursor_rect.y, 'magic')
 
-    def blit_screen(self):
-        self.game.window.blit(self.game.window, (0, 0))
-        pygame.display.update()
+    def blit_screen(self, scroll=0):
+        self.game.window.blit(self.game.window, (0, scroll))
+        pygame.display.flip()
         self.game.reset_keys()
 
 
@@ -31,9 +32,9 @@ class MainMenu(Menu):
         Menu.__init__(self, game)
         self.state = "Start"
         self.startx, self.starty = self.mid_w, self.mid_h + 30
-        self.optionsx, self.optionsy = self.mid_w, self.mid_h + 60
-        self.deckx, self.decky = self.mid_w, self.mid_h + 90
-        self.creditsx, self.creditsy = self.mid_w, self.mid_h + 120
+        self.optionsx, self.optionsy = self.mid_w, self.mid_h + 80
+        self.deckx, self.decky = self.mid_w, self.mid_h + 130
+        self.creditsx, self.creditsy = self.mid_w, self.mid_h + 180
         self.cursor_rect.midtop = (self.startx + self.offset, self.starty)
 
     def render_self(self):
@@ -43,11 +44,11 @@ class MainMenu(Menu):
             self.check_input()
             self.game.window.fill(self.game.BLACK)
             self.game.draw_text(
-                "Main Menu", 40, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 - 80)
-            self.game.draw_text("Start Game", 20, self.startx, self.starty)
-            self.game.draw_text("Options", 20, self.optionsx, self.optionsy)
-            self.game.draw_text("Deck", 20, self.deckx, self.decky)
-            self.game.draw_text("Credits", 20, self.creditsx, self.creditsy)
+                "main menu", 80, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 - 180)
+            self.game.draw_text("Start Game", 40, self.startx, self.starty)
+            self.game.draw_text("Options", 40, self.optionsx, self.optionsy)
+            self.game.draw_text("Deck", 40, self.deckx, self.decky)
+            self.game.draw_text("Credits", 40, self.creditsx, self.creditsy)
             self.draw_cursor(),
             self.blit_screen()
 
@@ -146,25 +147,35 @@ class DeckMenu(Menu):
         self.playerDeck: list[Deck] = playerDeck[:]
         self.cards: list[Deck] = []
         self.row = 0
+        self.scroll = 0
         self.column = 0
         self.all_sprites_list = pygame.sprite.Group()
-        self.playerCardpos = [10, 100]
+        self.playerCardPos = [10, 100]
         for card in cards:
             self.cards.append(
                 Card(card=card, isBack=False, isDeckMenu=True,
                      isMenuDeckSelected=card in self.playerDeck)
             )
+
+        self.all_sprites_list.add(self.cards)
+
+    def updateCardsPos(self):
         for i in range(len(self.cards)):
-            self.cards[i].rect.x = self.playerCardpos[0] + (self.column * 128)
-            self.cards[i].rect.y = self.playerCardpos[1] + (self.row * 160)
+            self.cards[i].rect.x = self.playerCardPos[0] + (self.column * 128)
+            self.cards[i].rect.y = self.playerCardPos[1] + \
+                ((self.row + self.scroll) * 158)
             self.column += 1
             if (i + 1) / 10 in breaks:
                 self.row += 1
                 self.column = 0
+
+    def render_self(self):
+        self.run_display = True
+        self.updateCardsPos()
         self.button = Button(
             self.game.window,
             1100,
-            650,
+            820,
             100,
             40,
             text="Save",
@@ -173,39 +184,54 @@ class DeckMenu(Menu):
             radius=8,
             onClick=lambda: saveDeckOnDisk(self.playerDeck),
         )
-        self.all_sprites_list.add(self.cards)
-        self.clock = pygame.time.Clock()
-
-    def render_self(self):
-        self.run_display = True
+        clock = pygame.time.Clock()
         while self.run_display:
-            self.game.check_events()
-            events = pygame.event.get()
             self.check_input()
+            events = pygame.event.get()
             self.game.window.fill(self.game.BLACK)
-            self.game.draw_text(
-                "Monte seu deck clicando nas cartas que deseja", 40, self.game.DISPLAY_W / 2, 40)
             self.all_sprites_list.update()
             self.all_sprites_list.draw(self.game.window)
             pygame_widgets.update(events)
+            self.game.draw_text(
+                "Monte seu deck clicando nas cartas que deseja", 40, self.game.DISPLAY_W / 2, 40)
+            # self.game.window.scroll(0, 80)
+
             self.blit_screen()
+            clock.tick(30)
 
     def check_input(self):
-        if self.game.BACK_KEY:
-            self.game.goToMenuScreen()
-        elif self.game.CLICKED:
-            pos = pygame.mouse.get_pos()
-            clicked_sprites = [
-                s for s in self.all_sprites_list if s.rect.collidepoint(pos)]
-            if len(clicked_sprites) > 0:
-                clicked_sprites[0].setSelectedOnDeckMenu()
-                if clicked_sprites[0].menuDeckSelected:
-                    self.playerDeck.append(clicked_sprites[0].card)
-                else:
-                    self.playerDeck.remove(clicked_sprites[0].card)
-        elif self.game.START_KEY:
-            # TO-DO: Adicionar menu de volume e de controles
-            pass
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running, self.playing = False, False
+                self.curr_screen.run_display = False
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_presses = pygame.mouse.get_pressed()
+                if mouse_presses[0]:
+                    pos = pygame.mouse.get_pos()
+                    clicked_sprites = [
+                        s for s in self.all_sprites_list if s.rect.collidepoint(pos)]
+                    if len(clicked_sprites) > 0:
+                        clicked_sprites[0].setSelectedOnDeckMenu()
+                        if clicked_sprites[0].menuDeckSelected:
+                            self.playerDeck.append(clicked_sprites[0].card)
+                        else:
+                            self.playerDeck.remove(clicked_sprites[0].card)
+            elif event.type == pygame.MOUSEWHEEL:
+                if event.y == -1 and self.scroll > -4:
+                    self.scroll -= 1
+                if event.y == 1 and self.scroll < 0:
+                    self.scroll += 1
+                self.row = 0
+                self.column = 0
+                self.updateCardsPos()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_BACKSPACE or event.key == pygame.K_ESCAPE:
+                    self.game.goToMenuScreen()
+                if event.key == pygame.K_DOWN:
+                    print(event)
+                if event.key == pygame.K_UP:
+                    print(event)
 
 
 class CreditsMenu(Menu):

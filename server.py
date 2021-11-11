@@ -29,7 +29,7 @@ def threaded_client(conn, p, gameId: int):
     }))
     while True:
         try:
-            data = pickle.loads(conn.recv(4096))
+            data = pickle.loads(conn.recv(8192))
             if gameId in games:
                 game: Duel = games[gameId]
                 if not data:

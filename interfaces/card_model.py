@@ -1,12 +1,17 @@
 from typing import TypedDict
 
+
 class Deck(TypedDict):
     card_id: str
-    name: str
-    imageName: str
-    text: str
+    card_name: str
+    card_image: str
     card_type: str
-    card_power: int
+    card_element: str
+    card_attack: int
+    card_def: int
+    card_cust: int
+    card_description: str
+
 
 class LoadDeckResponse(TypedDict):
     hasDeck: bool

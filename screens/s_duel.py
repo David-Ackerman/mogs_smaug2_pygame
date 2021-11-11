@@ -27,7 +27,7 @@ fieldCardPos = {
 BOARD_BG = pygame.image.load("assets/duelBoard.png")
 CARD_HAND = pygame.image.load("assets/cardHand.png")
 SIDE_DETAILS = pygame.image.load("assets/sideDetails.png")
-
+BOARD_BG = pygame.transform.scale(BOARD_BG, (880, 560))
 phase = {
     1: 'Draw Phase',
     2: 'Summon Phase',
@@ -65,7 +65,7 @@ class DuelGame():
         self.deckCardsSprite, self.handCardsSprite, self.fieldCardsSprite, self.graveCardsSprite, self.opHandCardsSprite, self.opFieldCardsSprite, self.opGraveCardsSprite, self.opDeckCardsSprite = pygame.sprite.Group(
         ), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group()
 
-        self.cardsInfo = CardsInfo(self.summonCard)
+        self.cardsInfo = CardsInfo(self.summonCard, 'a', 'b')
 
     def decreasingTimer(self):
         while True:
@@ -82,6 +82,21 @@ class DuelGame():
             if self.myTurn:
                 self.timer -= 1
             pygame.time.delay(1000)
+
+    def gameComunicate(self):
+        while True:
+            try:
+                getAction = {
+                    'player': self.player,
+                    'action': 'get',
+                    'cards': self.cards
+                }
+                self.duel: Duel = self.n.send(getAction)
+            except Exception as e:
+                self.run_display = False
+                print("Couldn't get game", e)
+                break
+            pygame.time.delay(300)
 
     def showCardsInfo(self, cards: List[Card], isField: bool = False, isMyHand: bool = False, cardPos: int = -1):
         if cardPos == - 1:
@@ -226,6 +241,15 @@ class DuelGame():
         self.showCardsInfo(self.handCards, False, True, cardPos)
         self.fieldCardsSprite.add(self.fieldCards[fieldType])
 
+    def endPlayerTime(self):
+        outOfTime = {
+            'player': self.player,
+            'action': 'changePlayerTime',
+            'cards': self.cards
+        }
+        self.duel: Duel = self.n.send(outOfTime)
+        self.timer = 240
+
     def redrawWindow(self, win: pygame.Surface, player):
         win.fill((128, 128, 128))
 
@@ -266,28 +290,18 @@ class DuelGame():
         self.initDuel(deck)
         clock = pygame.time.Clock()
         initedTimerThread = False
+
         while self.duel.connected() and self.run_display:
             clock.tick(30)
-            try:
-                if self.initialDeckSended:
-                    self.duel: Duel = self.n.send({'action': 'standby'})
-                else:
-                    getAction = {
-                        'player': self.player,
-                        'action': 'get',
-                        'cards': self.cards
-                    }
-                    self.duel: Duel = self.n.send(getAction)
-                    self.initialDeckSended = True
-            except Exception as e:
-                self.run_display = False
-                print("Couldn't get game", e)
-                break
-            self.myTurn = self.duel.isMyTurn(self.player)
+            if self.duel:
+                self.myTurn = self.duel.isMyTurn(self.player)
             if not(initedTimerThread) and self.duel.connected():
                 initedTimerThread = True
-                self.threadId = _thread.start_new_thread(
+
+                _thread.start_new_thread(
                     self.decreasingTimer, ())
+                _thread.start_new_thread(self.gameComunicate, ())
+
             self.check_events()
             self.redrawWindow(self.game.window, self.player)
 

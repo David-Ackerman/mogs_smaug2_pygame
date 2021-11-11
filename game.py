@@ -31,11 +31,12 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running, self.playing = False, False
                 self.curr_screen.run_display = False
-            if event.type == pygame.MOUSEBUTTONDOWN:
+
+            elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_presses = pygame.mouse.get_pressed()
                 if mouse_presses[0]:
                     self.CLICKED = True
-            if event.type == pygame.KEYDOWN:
+            elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.BACK_KEY = True
                 if event.key == pygame.K_RETURN:
@@ -50,7 +51,7 @@ class Game:
     def reset_keys(self):
         self.UP_KEY, self.DOWN_KEY, self.BACK_KEY, self.START_KEY, self.CLICKED = False, False, False, False, False
 
-    def draw_text(self, text, size, x, y, font='nunito'):
+    def draw_text(self, text, size, x, y, font='magic'):
         font = loadCustomFont(size, font)
         text_surface = font.render(text, True, self.WHITE)
         text_rect = text_surface.get_rect()

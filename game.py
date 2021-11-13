@@ -10,11 +10,11 @@ from services.saveDeck import loadDeckOnDisk
 class Game:
     def __init__(self):
         pygame.init()
+        infoObject = pygame.display.Info()
         self.running, self.playing = True, False
         self.UP_KEY, self.DOWN_KEY, self.START_KEY, self.BACK_KEY, self.CLICKED = False, False, False, False, False
-        self.DISPLAY_W, self.DISPLAY_H = 1280, 880
-        self.window = pygame.display.set_mode(
-            ((self.DISPLAY_W, self.DISPLAY_H)))
+        self.DISPLAY_W, self.DISPLAY_H = 1280, 980
+        self.window = pygame.display.set_mode((self.DISPLAY_W, self.DISPLAY_H))
         pygame.display.set_caption('Masters of Gamblers')
         self.font_name = pygame.font.get_default_font()
         self.BLACK, self.WHITE = (0, 0, 0), (255, 255, 255)

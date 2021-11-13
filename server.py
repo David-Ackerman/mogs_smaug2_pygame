@@ -45,6 +45,9 @@ def threaded_client(conn, p, gameId: int):
                     elif data['action'] == "changePlayerTime":
                         game.changePlayerTime()
                         game.setPlayerCards(data['player'], data['cards'])
+                    elif data['action'] == "battlePhase":
+                        game.setBattlePhase()
+                        game.setPlayerCards(data['player'], data['cards'])
 
                     conn.sendall(pickle.dumps(game))
             else:

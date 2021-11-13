@@ -1,12 +1,11 @@
-from typing import Type
 import pygame
 import pygame_widgets
+import math
 from pygame_widgets.button import Button
 from components.card import Card
 from interfaces.card_model import Deck
 from interfaces.cards import cards
 from services.saveDeck import saveDeckOnDisk
-breaks = [1, 2, 3, 4, 5, 6, 7]
 
 
 class Menu:
@@ -158,14 +157,15 @@ class DeckMenu(Menu):
             )
 
         self.all_sprites_list.add(self.cards)
+        self.breaks = list(range(1, math.ceil(len(cards) / 5)))
 
     def updateCardsPos(self):
         for i in range(len(self.cards)):
-            self.cards[i].rect.x = self.playerCardPos[0] + (self.column * 128)
+            self.cards[i].rect.x = self.playerCardPos[0] + (self.column * 264)
             self.cards[i].rect.y = self.playerCardPos[1] + \
-                ((self.row + self.scroll) * 158)
+                ((self.row + self.scroll) * 308)
             self.column += 1
-            if (i + 1) / 10 in breaks:
+            if (i + 1) / 5 in self.breaks:
                 self.row += 1
                 self.column = 0
 
@@ -218,7 +218,7 @@ class DeckMenu(Menu):
                         else:
                             self.playerDeck.remove(clicked_sprites[0].card)
             elif event.type == pygame.MOUSEWHEEL:
-                if event.y == -1 and self.scroll > -4:
+                if event.y == -1 and self.scroll > -self.breaks[-2]:
                     self.scroll -= 1
                 if event.y == 1 and self.scroll < 0:
                     self.scroll += 1

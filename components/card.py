@@ -36,18 +36,17 @@ CARD_COMPOSE_COORD = {
 
 
 class Card(pygame.sprite.Sprite):
-    def __init__(self, card: Deck, isBack: bool, isDeckMenu: bool, isMenuDeckSelected: bool = False, id: str = '0', flip=False):
+    def __init__(self, card: Deck, isBack: bool, isDeckMenu: bool, isSelected: bool = False, selectionColor=(20, 200, 40, 255), flip=False):
         super().__init__()
-        self.card, self.flipped, self.cardOnDuelId = card, flip, id
+        self.card, self.flipped, self.cardOnDuelId = card, flip, card['onGameId']
         self.selection = 'deckMenu' if isDeckMenu else 'default'
-        self.isSelected = False
-        self.selectionColor = (20, 200, 40)
+        self.isSelected = isSelected
+        self.selectionColor = selectionColor
         self.coords = CARD_COMPOSE_COORD[self.selection]
 
         self.myfont = loadCustomFont(14 if isDeckMenu else 8, 'nunito-bold')
         self.surf = pygame.Surface(
             (CARD_WIDTH[self.selection], CARD_HEIGHT[self.selection]), pygame.SRCALPHA)
-        self.menuDeckSelected = isMenuDeckSelected
         self.isBack = isBack
         self.build_card()
         self.image = self.surf
@@ -66,7 +65,7 @@ class Card(pygame.sprite.Sprite):
     def selectCard(self, color=(20, 200, 40, 255)):
         self.isSelected = True
         self.selectionColor = color
-        self.build_card()
+        self.build_card(True)
 
     def deselectCard(self):
         self.isSelected = False
@@ -76,18 +75,21 @@ class Card(pygame.sprite.Sprite):
         self.isBack = not self.isBack
         self.build_card()
 
-    def build_card(self):
+    def build_card(self, notFlip=False):
+
         cardType = self.card['card_element']
-        self.surf.fill((0, 0, 0, 0))
         if self.isBack:
             img = pygame.image.load('assets/cardTemplates/cardBack.png')
+            self.surf.fill((0, 0, 0, 0))
             if self.flipped:
                 img = pygame.transform.flip(img, False, True)
             img = pygame.transform.scale(img, (102, 142))
             self.surf.blit(img, (0, 0))
         else:
-            if(self.menuDeckSelected or self.isSelected):
+            if self.isSelected:
                 self.surf.fill(self.selectionColor)
+            else:
+                self.surf.fill((0, 0, 0, 0))
             cardPath = 'assets/cardTemplates/cardFront-' + \
                 ('normal' if cardType == 'knight' or cardType ==
                  None else cardType) + '.png'
@@ -104,12 +106,14 @@ class Card(pygame.sprite.Sprite):
             if self.selection == 'default':
                 bgImg = pygame.transform.scale(bgImg, (100, 140))
             cardImg = pygame.transform.scale(cardImg, IMG_WH[self.selection])
+
             self.surf.blit(bgImg, self.coords['card'])
             self.surf.blit(cardImg, self.coords['image'])
             self.surf.blit(cardName, self.coords['name'])
-            if self.flipped:
-                self.surf = pygame.transform.flip(self.surf, False, True)
+            if self.flipped and not(notFlip):
+                print(' flippou')
+                self.surf = pygame.transform.rotate(self.surf, 180)
 
     def setSelectedOnDeckMenu(self):
-        self.menuDeckSelected = not self.menuDeckSelected
+        self.isSelected = not self.isSelected
         self.build_card()

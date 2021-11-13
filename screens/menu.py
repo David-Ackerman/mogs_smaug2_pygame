@@ -153,7 +153,7 @@ class DeckMenu(Menu):
         for card in cards:
             self.cards.append(
                 Card(card=card, isBack=False, isDeckMenu=True,
-                     isMenuDeckSelected=card in self.playerDeck)
+                     isSelected=card in self.playerDeck)
             )
 
         self.all_sprites_list.add(self.cards)

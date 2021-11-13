@@ -23,7 +23,7 @@ cardsInfoBtns = {
 
 
 class CardsInfo:
-    def __init__(self, summon, battlePhase, endPhase):
+    def __init__(self, summon, battlePhase, endPhase, attack):
         self.cards = []
         self.pos = -1
         self.turn = 1
@@ -34,6 +34,7 @@ class CardsInfo:
         self.summonCard = summon
         self.battlePhase = battlePhase
         self.endPhase = endPhase
+        self.attack = attack
         self.cardSelected = None
         self.isAttack = False
         self.isEnemy = False
@@ -64,9 +65,7 @@ class CardsInfo:
         self.font = loadCustomFont(24, 'nunito')
         if self.cards:
             self.cardSelected = self.cards[self.pos]
-            if self.isAttack and isEnemy:
-                self.cardSelected.selectCard((200, 40, 20, 255))
-            else:
+            if not (self.isAttack and self.isEnemy):
                 self.cardSelected.selectCard()
         else:
             self.cardSelected = None
@@ -77,11 +76,11 @@ class CardsInfo:
         elif cardsInfoBtns['goRight'].click(pos):
             self.changeCard('right')
         elif cardsInfoBtns['attack'].click(pos):
-            print('attack')
+            self.attack(self.cardSelected)
         elif cardsInfoBtns['effect'].click(pos):
             print('effect')
         elif cardsInfoBtns['confirmAttack'].click(pos) and self.isAttack and self.isEnemy:
-            print('effect')
+            print('confirmAttack')
         elif cardsInfoBtns['summon'].click(pos) and self.isHand and self.isMyTurn and self.turn == 2:
             self.summonCard(self.pos)
         elif cardsInfoBtns['phaseAttack'].click(pos) and self.isMyTurn and self.turn == 2 and self.round > 1:
@@ -105,7 +104,7 @@ class CardsInfo:
         win.blit(cardImg, (15, 78))
         win.blit(name, (18, 480))
         win.blit(cust, (18, 515))
-        if self.cardSelected.card['card_type'] != 'spell':
+        if self.cardSelected.card['card_type'] != 'spell' and self.cardSelected.card['card_type'] != 'trap':
             element = self.font.render(
                 "Elemento: " + self.cardSelected.card['card_element'], True, (233, 233, 233))
             attack = self.font.render(
@@ -119,11 +118,10 @@ class CardsInfo:
         blit_complex_text(
             win, "Descrição: " + self.cardSelected.card['card_description'], (18, 585), self.font, 364, (233, 233, 233))
 
-        if len(self.cards) >= 3:
-            if self.pos > 0:
-                cardsInfoBtns['goLeft'].draw(win)
-            if self.pos + 1 < len(self.cards):
-                cardsInfoBtns['goRight'].draw(win)
+        if len(self.cards) >= 2 and self.pos > 0:
+            cardsInfoBtns['goLeft'].draw(win)
+        if self.pos + 1 < len(self.cards):
+            cardsInfoBtns['goRight'].draw(win)
 
         if self.isMyTurn:
             if self.isAttack and self.isEnemy:
@@ -135,9 +133,9 @@ class CardsInfo:
                 if cardType == 'spell':
                     cardsInfoBtns['effect'].draw(win)
             elif self.isField:
-                if cardType == 'spell' or cardType == 'monste effect':
+                if cardType == 'spell' or cardType == 'monster effect':
                     cardsInfoBtns['effect'].draw(win)
-                elif self.turn == 3:
+                if self.turn == 3 and cardType != 'spell':
                     cardsInfoBtns['attack'].draw(win)
             if self.round > 1 and self.turn == 2:
                 cardsInfoBtns['phaseAttack'].draw(win)

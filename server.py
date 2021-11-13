@@ -39,6 +39,9 @@ def threaded_client(conn, p, gameId: int):
                         break
                     elif data['action'] == "get":
                         game.setPlayerCards(data['player'], data['cards'])
+                    elif data['action'] == "selectEnemyCard":
+                        game.selectEnemyCard(
+                            data['player'], data['selectedCard'])
                     elif data['action'] == "drawCard":
                         game.changeTurn()
                         game.setPlayerCards(data['player'], data['cards'])

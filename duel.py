@@ -10,6 +10,8 @@ class Duel:
         self.round = 1
         self.player1 = {}
         self.player2 = {}
+        self.selectedAttackedP1 = ''
+        self.selectedAttackedP2 = ''
         self.ready: bool = False
         self.id: str = id
 
@@ -33,14 +35,16 @@ class Duel:
                 'deck': newCards['deck'],
                 'hand': newCards['hand'],
                 'field': newCards['field'],
-                'grave': newCards['grave']
+                'grave': newCards['grave'],
+                'enemySelected': self.selectedAttackedP2
             }
         else:
             self.player2 = {
                 'deck': newCards['deck'],
                 'hand': newCards['hand'],
                 'field': newCards['field'],
-                'grave': newCards['grave']
+                'grave': newCards['grave'],
+                'enemySelected': self.selectedAttackedP1
             }
 
     def setBattlePhase(self):
@@ -57,6 +61,12 @@ class Duel:
             self.turn += 1
         else:
             self.changePlayerTime()
+
+    def selectEnemyCard(self, player, enemyCard):
+        if player == 0:
+            self.selectedAttackedP1 = enemyCard
+        else:
+            self.selectedAttackedP1 = enemyCard
 
     def connected(self) -> bool:
         return self.ready

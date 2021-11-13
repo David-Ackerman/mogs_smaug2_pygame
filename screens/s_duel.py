@@ -44,6 +44,8 @@ class DuelGame():
         self.lifePoints = 200
         self.mana = 14
         self.attacking = False
+        self.forceEnemyBuild = False
+        self.enemySelect = ''
         self.initialDeckSended, self.finishThread, self.timer, self.myTurn = False, False, 240, self.duel.isMyTurn(
             self.player)
         self.cards = {
@@ -69,7 +71,7 @@ class DuelGame():
         ), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group()
 
         self.cardsInfo = CardsInfo(
-            self.summonCard, self.changeBattlePhase, self.endPlayerTime)
+            self.summonCard, self.changeBattlePhase, self.endPlayerTime, self.setAttack)
 
     def decreasingTimer(self):
         while True:
@@ -120,11 +122,12 @@ class DuelGame():
             'grave': []
         }
         random.shuffle(self.playerDeck)
+        cardP = 'playerSec' if self.player == 0 else 'playerPri'
         for i in range(len(self.playerDeck)):
-            idCard = 'p' + str(i)
+            self.playerDeck[i]['onGameId'] = cardP+str(i)
             self.cards['deck'].append(self.playerDeck[i])
             self.deckCards.append(
-                Card(self.playerDeck[i], True, False, id=idCard))
+                Card(self.playerDeck[i], True, False))
             self.deckCards[i].rect.x = deckCardsPos['player'][0]
             self.deckCards[i].rect.y = (
                 deckCardsPos['player'][1] - (2 * i))
@@ -143,6 +146,7 @@ class DuelGame():
     def buildOpponent(self, cards):
         if cards == {}:
             return
+
         if len(cards['hand']) == 0 and len(cards['deck']) == 0 and len(cards['grave']) == 0:
             return
         if(cards['deck'] != self.opCards['deck']):
@@ -166,16 +170,17 @@ class DuelGame():
             self.opHandCardsSprite.add(self.opHandCards)
         fieldCondition = cards['field']['front'] != self.opCards['field']['front']
         supportCondition = cards['field']['support'] != self.opCards['field']['support']
-        if(fieldCondition):
+        if(fieldCondition or self.forceEnemyBuild):
             self.opFieldFrontCardsSprite.empty()
             self.opFieldCards['front'] = []
             for i in range(len(cards['field']['front'])):
                 self.opFieldCards['front'].append(
-                    Card(cards['field']['front'][i], False, False, flip=True))
+                    Card(cards['field']['front'][i], False, False, self.enemySelect == cards['field']['front'][i]['onGameId'], (200, 40, 20, 255), flip=True))
                 self.opFieldCards['front'][i].rect.x = fieldCardPos['opFront'][0] - \
                     (i * 135)
                 self.opFieldCards['front'][i].rect.y = fieldCardPos['opFront'][1]
             self.opFieldFrontCardsSprite.add(self.opFieldCards['front'])
+            self.forceEnemyBuild = False
         if(supportCondition):
             self.opFieldCards['support'] = []
             self.opFieldSupportCardsSprite.empty()
@@ -223,7 +228,7 @@ class DuelGame():
 
     def summonCard(self, cardPos: int):
         posString = 'player'
-        if self.handCards[cardPos].card['card_type'] == 'spell':
+        if self.handCards[cardPos].card['card_type'] == 'spell' or self.handCards[cardPos].card['card_type'] == 'trap':
             fieldType = 'support'
         else:
             fieldType = 'front'
@@ -251,8 +256,19 @@ class DuelGame():
 
     def setAttack(self, card: Card):
         self.attacking = True
-        while self.attacking:
-            self.checkOpponentClick()
+        self.attackingCard = card
+
+    def selectEnemyCard(self, card: Card):
+        changeTurn = {
+            'player': self.player,
+            'action': 'selectEnemyCard',
+            'cards': self.cards,
+            'selectedCard': card.cardOnDuelId
+        }
+        self.enemySelect = card.cardOnDuelId
+        self.duel: Duel = self.n.send(changeTurn)
+        self.forceEnemyBuild = True
+        # self.showCardsInfo([card], False, False)
 
     def endPlayerTime(self):
         changeTurn = {
@@ -337,17 +353,6 @@ class DuelGame():
             self.check_events()
             self.redrawWindow(self.game.window, self.player)
 
-    def checkOpponentClick(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                pos = pygame.mouse.get_pos()
-                for card in self.opFieldCards['front']:
-                    if card.click(pos):
-                        self.showCardsInfo([card])
-                        break
-
     def check_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -362,6 +367,12 @@ class DuelGame():
                     self.n.send({'action': 'quit'})
                     self.game.goToMenuScreen()
                     break
+                elif self.attacking:
+                    self.attackingCard.selectCard()
+                    for card in self.opFieldCards['front']:
+                        if card.click(pos):
+                            self.selectEnemyCard(card)
+                            break
                 elif self.deckClick(pos):
                     self.drawDeckCard(self.player)
                 else:

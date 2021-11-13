@@ -2,6 +2,7 @@ from typing import TypedDict
 
 
 class Deck(TypedDict):
+    onGameId: str
     card_id: str
     card_name: str
     card_image: str

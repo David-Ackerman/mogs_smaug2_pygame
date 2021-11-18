@@ -2,6 +2,7 @@ import pygame
 import pygame_widgets
 import math
 from pygame_widgets.button import Button
+from components.buttonImg import ButtonImage
 from components.card import Card
 from interfaces.card_model import Deck
 from interfaces.cards import cards
@@ -172,18 +173,8 @@ class DeckMenu(Menu):
     def render_self(self):
         self.run_display = True
         self.updateCardsPos()
-        self.button = Button(
-            self.game.window,
-            1100,
-            820,
-            100,
-            40,
-            text="Save",
-            fontSize=30,
-            margin=20,
-            radius=8,
-            onClick=lambda: saveDeckOnDisk(self.playerDeck),
-        )
+        self.button = ButtonImage('save', 1100, 820)
+
         clock = pygame.time.Clock()
         while self.run_display:
             self.check_input()
@@ -191,10 +182,12 @@ class DeckMenu(Menu):
             self.game.window.fill(self.game.BLACK)
             self.all_sprites_list.update()
             self.all_sprites_list.draw(self.game.window)
+            self.button.draw(self.game.window)
             pygame_widgets.update(events)
+            pygame.draw.rect(
+                self.game.window, (self.game.BLACK), (0, 0, 1280, 80))
             self.game.draw_text(
                 "Monte seu deck clicando nas cartas que deseja", 40, self.game.DISPLAY_W / 2, 40)
-            # self.game.window.scroll(0, 80)
 
             self.blit_screen()
             clock.tick(30)
@@ -209,11 +202,14 @@ class DeckMenu(Menu):
                 mouse_presses = pygame.mouse.get_pressed()
                 if mouse_presses[0]:
                     pos = pygame.mouse.get_pos()
+                    if self.button.click(pos):
+                        saveDeckOnDisk(self.playerDeck)
+                        return
                     clicked_sprites = [
                         s for s in self.all_sprites_list if s.rect.collidepoint(pos)]
                     if len(clicked_sprites) > 0:
                         clicked_sprites[0].setSelectedOnDeckMenu()
-                        if clicked_sprites[0].menuDeckSelected:
+                        if clicked_sprites[0].isSelected:
                             self.playerDeck.append(clicked_sprites[0].card)
                         else:
                             self.playerDeck.remove(clicked_sprites[0].card)

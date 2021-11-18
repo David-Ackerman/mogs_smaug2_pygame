@@ -3,27 +3,28 @@ from typing import Dict, List, Tuple
 
 import pygame
 from components.button import ButtonDuels
+from components.buttonImg import ButtonImage
 from components.card import Card
 from services.getFont import loadCustomFont
 from services.renders import blit_complex_text
 
 width = 1280
-height = 880
+height = 980
 
 cardsInfoBtns = {
-    'summon': ButtonDuels('Invocar', 20, height - 80, (159, 187, 193), 100, 30, 14, 20),
-    'attack': ButtonDuels('Atacar', 154, height - 80, (159, 187, 193), 100, 30, 14, 20),
-    'confirmAttack': ButtonDuels('confirmar', 154, height - 80, (159, 187, 193), 100, 30, 14, 20),
-    'effect': ButtonDuels('Ativar', 280, height - 80, (159, 187, 193), 100, 30, 14, 20),
-    'phaseAttack': ButtonDuels('fase de ataque', 20, height - 40, (159, 187, 193), 100, 30, 14, 20),
-    'endTurn': ButtonDuels('encerrar turno', 280, height - 40, (159, 187, 193), 100, 30, 14, 20),
-    'goLeft': ButtonDuels('<', 20, 430, (159, 187, 193), 30, 20, 10, 25),
-    'goRight': ButtonDuels('>', 350, 430, (159, 187, 193), 30, 20, 10, 25),
+    'summon': ButtonImage('summon', 20, height - 95),
+    'attack': ButtonImage('attack', 154, height - 95),
+    'confirmAttack': ButtonDuels('confirmar', 154, height - 95, (159, 187, 193), 100, 30, 14, 20),
+    'effect': ButtonImage('activate', 280, height - 95),
+    'phaseAttack': ButtonImage('attackPhase', 20, height - 50),
+    'endTurn': ButtonImage('endPhase', 220, height - 50),
+    'goLeft': ButtonImage('left', 20, 430),
+    'goRight': ButtonImage('right', 350, 430),
 }
 
 
 class CardsInfo:
-    def __init__(self, summon, battlePhase, endPhase, attack):
+    def __init__(self, summon, battlePhase, endPhase, attack, confirmattack):
         self.cards = []
         self.pos = -1
         self.turn = 1
@@ -35,6 +36,7 @@ class CardsInfo:
         self.battlePhase = battlePhase
         self.endPhase = endPhase
         self.attack = attack
+        self.confirmattack = confirmattack
         self.cardSelected = None
         self.isAttack = False
         self.isEnemy = False
@@ -75,12 +77,12 @@ class CardsInfo:
             self.changeCard('left')
         elif cardsInfoBtns['goRight'].click(pos):
             self.changeCard('right')
-        elif cardsInfoBtns['attack'].click(pos):
+        elif cardsInfoBtns['attack'].click(pos) and not(self.isEnemy):
             self.attack(self.cardSelected)
         elif cardsInfoBtns['effect'].click(pos):
             print('effect')
         elif cardsInfoBtns['confirmAttack'].click(pos) and self.isAttack and self.isEnemy:
-            print('confirmAttack')
+            self.confirmattack(self.cardSelected)
         elif cardsInfoBtns['summon'].click(pos) and self.isHand and self.isMyTurn and self.turn == 2:
             self.summonCard(self.pos)
         elif cardsInfoBtns['phaseAttack'].click(pos) and self.isMyTurn and self.turn == 2 and self.round > 1:
@@ -135,7 +137,7 @@ class CardsInfo:
             elif self.isField:
                 if cardType == 'spell' or cardType == 'monster effect':
                     cardsInfoBtns['effect'].draw(win)
-                if self.turn == 3 and cardType != 'spell':
+                if self.turn == 3 and cardType != 'spell' and self.turn == 3 and cardType != 'trap':
                     cardsInfoBtns['attack'].draw(win)
             if self.round > 1 and self.turn == 2:
                 cardsInfoBtns['phaseAttack'].draw(win)

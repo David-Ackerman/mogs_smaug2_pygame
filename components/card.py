@@ -111,7 +111,6 @@ class Card(pygame.sprite.Sprite):
             self.surf.blit(cardImg, self.coords['image'])
             self.surf.blit(cardName, self.coords['name'])
             if self.flipped and not(notFlip):
-                print(' flippou')
                 self.surf = pygame.transform.rotate(self.surf, 180)
 
     def setSelectedOnDeckMenu(self):

@@ -42,6 +42,9 @@ def threaded_client(conn, p, gameId: int):
                     elif data['action'] == "selectEnemyCard":
                         game.selectEnemyCard(
                             data['player'], data['selectedCard'])
+                    elif data['action'] == "combat":
+                        game.combat(
+                            data['player'], data['attacking'], data['defending'])
                     elif data['action'] == "drawCard":
                         game.changeTurn()
                         game.setPlayerCards(data['player'], data['cards'])

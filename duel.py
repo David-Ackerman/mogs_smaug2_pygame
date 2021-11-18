@@ -62,6 +62,14 @@ class Duel:
         else:
             self.changePlayerTime()
 
+    def combat(self, player, attack: Deck, defense: Deck):
+        if attack['card_attack'] > defense['card_def']:
+            print('destroy defense card')
+        elif attack['card_attack'] == defense['card_def']:
+            print('destroy two cards')
+        elif defense['card_def'] > attack['card_attack']:
+            print('destroy attack card')
+
     def selectEnemyCard(self, player, enemyCard):
         if player == 0:
             self.selectedAttackedP1 = enemyCard

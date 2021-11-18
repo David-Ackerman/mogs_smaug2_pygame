@@ -71,7 +71,7 @@ class DuelGame():
         ), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group()
 
         self.cardsInfo = CardsInfo(
-            self.summonCard, self.changeBattlePhase, self.endPlayerTime, self.setAttack)
+            self.summonCard, self.changeBattlePhase, self.endPlayerTime, self.setAttack, self.confirmAttack)
 
     def decreasingTimer(self):
         while True:
@@ -268,7 +268,25 @@ class DuelGame():
         self.enemySelect = card.cardOnDuelId
         self.duel: Duel = self.n.send(changeTurn)
         self.forceEnemyBuild = True
-        # self.showCardsInfo([card], False, False)
+        self.showCardsInfo([card], False, False, isEnemy=True)
+
+    def confirmAttack(self, attackedCard):
+
+        for card in self.cards['field']['front']:
+            if card['onGameId'] == self.attackingCard.cardOnDuelId:
+                attackCard = card
+        for card in self.opCards['field']['front']:
+            if card['onGameId'] == attackedCard.cardOnDuelId:
+                defenseCard = card
+        print(self.attackingCard, attackedCard)
+        getAction = {
+            'player': self.player,
+            'action': 'combat',
+            'cards': self.cards,
+            'attacking': attackCard,
+            'defending': defenseCard
+        }
+        self.duel: Duel = self.n.send(getAction)
 
     def endPlayerTime(self):
         changeTurn = {

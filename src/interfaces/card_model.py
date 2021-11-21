@@ -1,4 +1,8 @@
-from typing import TypedDict
+from typing import Dict, TypedDict, Literal
+
+
+Fonts = Literal['nunito', 'nunito-bold', 'nunito-italic', 'nunito-l',
+                'nunito-l-italic', 'magic',  'rooters', 'rooters-italic']
 
 
 class Deck(TypedDict):
@@ -16,4 +20,6 @@ class Deck(TypedDict):
 
 class LoadDeckResponse(TypedDict):
     hasDeck: bool
+    userName: str
+    options: Dict[str, any]
     deck: list[Deck]

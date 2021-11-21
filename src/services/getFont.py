@@ -1,5 +1,7 @@
-import os  # Remember to import it in order to use os.path.join().
+import os
 import pygame
+
+from src.interfaces.card_model import Fonts
 
 fonts = {
     'nunito': 'NunitoSans-Regular.ttf',
@@ -7,11 +9,13 @@ fonts = {
     'nunito-italic': 'NunitoSans-Italic.ttf',
     'nunito-l': 'NunitoSans-Light.ttf',
     'nunito-l-italic': 'NunitoSans-LightItalic.ttf',
-    'magic': 'MagicSparkle.ttf'
+    'magic': 'MagicSparkle.ttf',
+    'rooters': 'Rooters.ttf',
+    'rooters-italic': 'Rooters-Italic.ttf'
 }
 
 
-def loadCustomFont(size: int, fontType: str = 'nunito'):
+def loadCustomFont(size: int, fontType: Fonts = 'nunito'):
     """
     A function to load a custom font from a file.
     """

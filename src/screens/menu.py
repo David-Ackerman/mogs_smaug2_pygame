@@ -1,10 +1,21 @@
 import pygame
 import math
+import sys
+from src.components.button import ButtonDuels
+from src.services.getFont import loadCustomFont
 from src.components.buttonImg import ButtonImage
 from src.components.card import Card
 from src.interfaces.card_model import Deck
 from src.interfaces.cards import cards
 from src.services.saveDeck import saveDeckOnDisk
+
+vols = {
+    '1': 0.03,
+    '2': 0.1,
+    '3': 0.3,
+    '4': 0.6,
+    '5': 0.9,
+}
 
 
 class Menu:
@@ -130,38 +141,85 @@ class MainMenu(Menu):
 class OptionsMenu(Menu):
     def __init__(self, game):
         Menu.__init__(self, game)
-        self.state = "Volume"
-        self.volx, self.voly = self.mid_w, self.mid_h + 30
-        self.controlsx, self.controlsy = self.mid_w, self.mid_h + 60
-        self.cursor_rect.midtop = (self.volx + self.offset, self.voly)
+        self.userx, self.usery = self.mid_w - 120, self.mid_h + 30
+        self.volx, self.voly = self.mid_w - 120, self.mid_h + 100
+        self.buttonsY = self.voly - 10
+        self.buttonsx = self.volx + 70
+        self.base_font = loadCustomFont(25)
+        self.userText = self.game.userName
+        self.volume = self.game.volume
+        self.btns_vol = [ButtonDuels('1', self.buttonsx, self.buttonsY, (200, 200, 200), 'rooters', 30, 30, 10, 25, textColor=(20, 20, 20)), ButtonDuels('2', self.buttonsx + 40, self.buttonsY, (200, 200, 200), 'rooters', 30, 30, 10, 25, textColor=(20, 20, 20)),
+                         ButtonDuels('3', self.buttonsx + 80, self.buttonsY, (200, 200, 200), 'rooters', 30, 30, 10, 25, textColor=(20, 20, 20)), ButtonDuels('4', self.buttonsx + 120, self.buttonsY, (200, 200, 200), 'rooters', 30, 30, 10, 25, textColor=(20, 20, 20)), ButtonDuels('5', self.buttonsx + 160, self.buttonsY, (200, 200, 200), 'rooters', 30, 30, 10, 25, textColor=(20, 20, 20))]
 
     def render_self(self):
+        self.game.music.stop()
         self.run_display = True
+        self.sound = pygame.mixer.Sound('assets/sounds/dramatic.wav')
+        self.button = ButtonImage('save', 1100, 820)
+        self.input_rect = pygame.Rect(
+            self.userx + 74, self.usery - 20, 200, 36)
+        color_active = (233, 233, 233)
+        color_passive = (150, 150, 150)
+        color = color_passive
+        self.text_active = False
         while self.run_display:
-            self.game.check_events()
             self.check_input()
+            color = color_active if self.text_active else color_passive
             self.game.window.fill(self.game.BLACK)
+            text_surface = self.base_font.render(
+                self.userText, True, (255, 255, 255))
+
             self.game.draw_text(
-                "Options", 40, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 - 50)
-            self.game.draw_text("Volume", 20, self.volx, self.voly)
-            self.game.draw_text("Controls", 20, self.controlsx, self.controlsy)
-            self.draw_cursor()
+                "Options", 80, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 - 80)
+            self.game.draw_text(
+                "UserName:", 25, self.userx, self.usery, font="nunito")
+            self.game.draw_text("Volume: ", 30, self.volx,
+                                self.voly, font="nunito")
+
+            self.game.window.blit(
+                text_surface, (self.userx + 80, self.usery - 16))
+            self.button.draw(self.game.window)
+            for btn in self.btns_vol:
+                btn.draw(self.game.window)
+            pygame.draw.rect(self.game.window,
+                             color, self.input_rect, 2)
             self.blit_screen()
+        self.game.goToMenuScreen()
 
     def check_input(self):
-        if self.game.BACK_KEY:
-            self.game.goToMenuScreen()
-        elif self.game.UP_KEY or self.game.DOWN_KEY:
-            if self.state == "Volume":
-                self.cursor_rect.midtop = (
-                    self.controlsx + self.offset, self.controlsy)
-                self.state = "Controls"
-            elif self.state == "Controls":
-                self.cursor_rect.midtop = (self.volx + self.offset, self.voly)
-                self.state = "Volume"
-        elif self.game.START_KEY:
-            # TO-DO: Adicionar menu de volume e de controles
-            pass
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_presses = pygame.mouse.get_pressed()
+                if mouse_presses[0]:
+                    self.text_active = False
+                    pos = pygame.mouse.get_pos()
+                    if self.button.click(pos):
+                        saveDeckOnDisk(self.game.playerDeck, self.userText, {
+                                       'vol': self.volume})
+                        self.game.userName = self.userText
+                        self.game.volume = self.volume
+                        self.run_display = False
+                        return
+                    elif self.input_rect.collidepoint(pos):
+                        self.text_active = True
+                    else:
+                        for vol in self.btns_vol:
+                            if vol.click(pos):
+                                self.volume = vols[vol.text]
+                                self.sound.set_volume(self.volume)
+                                self.sound.play(0, 1000)
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    self.game.goToMenuScreen()
+                elif self.text_active:
+                    if event.key == pygame.K_BACKSPACE:
+                        self.userText = self.userText[:-1]
+                    else:
+                        if len(self.userText) < 12:
+                            self.userText += event.unicode
 
 
 class DeckMenu(Menu):
@@ -224,7 +282,8 @@ class DeckMenu(Menu):
                 if mouse_presses[0]:
                     pos = pygame.mouse.get_pos()
                     if self.button.click(pos):
-                        saveDeckOnDisk(self.playerDeck)
+                        saveDeckOnDisk(self.playerDeck, self.game.userName, {
+                                       'vol': self.game.volume})
                         return
                     clicked_sprites = [
                         s for s in self.all_sprites_list if s.rect.collidepoint(pos)]

@@ -3,19 +3,25 @@ import os
 from src.interfaces.card_model import Deck, LoadDeckResponse
 
 
-def saveDeckOnDisk(deck: list[Deck]):
-    if os.path.exists("storage/playerDeck.npy"):
-        os.remove("storage/playerDeck.npy")
-    np.save("storage/playerDeck.npy", deck, allow_pickle=True)
+def saveDeckOnDisk(deck: list[Deck], userName: str, options):
+    if os.path.exists("storage/playerData.npy"):
+        os.remove("storage/playerData.npy")
+    np.save("storage/playerData.npy", [{
+        "userName": userName,
+        "options": options,
+        "deck": deck
+    }], allow_pickle=True)
     print("Deck Salvo com sucesso")
 
 
 def loadDeckOnDisk() -> LoadDeckResponse:
-    response: LoadDeckResponse = {"hasDeck": False, "deck": []}
+    response: LoadDeckResponse = {"hasDeck": False,
+                                  "userName": '',  "options": {},  "deck": []}
     try:
-        returnedArray = np.load("storage/playerDeck.npy", allow_pickle=True)
-        for card in returnedArray:
-            response["deck"].append(card)
+        returnData = np.load("storage/playerData.npy", allow_pickle=True)
+        response["userName"] = returnData[0]["userName"]
+        response["options"] = returnData[0]["options"]
+        response["deck"] = returnData[0]["deck"].copy()
         response["hasDeck"] = True
     except:
         response["hasDeck"] = False

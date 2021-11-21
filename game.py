@@ -13,6 +13,7 @@ class Game:
         self.BLACK, self.WHITE = (0, 0, 0), (255, 255, 255)
         gameIcon = pygame.image.load('assets/gameIcon.jpg')
         self.running, self.playing = True, False
+        self.lastEvent = None
         self.UP_KEY, self.DOWN_KEY, self.START_KEY, self.BACK_KEY, self.CLICKED = False, False, False, False, False
         self.DISPLAY_W, self.DISPLAY_H = 1280, 980
         self.window = pygame.display.set_mode((self.DISPLAY_W, self.DISPLAY_H))
@@ -20,11 +21,16 @@ class Game:
             'Masters of Gamblers')
         pygame.display.set_icon(gameIcon)
         response = loadDeckOnDisk()
-        pygame.mixer.music.load("assets/sounds/dramatic.wav")
-        pygame.mixer.music.play()
-        pygame.mixer.music.set_volume(0.0009)
+        print(response)
+        self.playerDeck = response["deck"] if response['hasDeck'] else []
+        self.userName = response['userName'] if response['hasDeck'] else ''
+        self.volume = response['options']['vol'] if response['hasDeck'] else 0.1
+        self.music = pygame.mixer.music
+        self.music.load("assets/sounds/dramatic.wav")
+        self.music.play()
+        self.music.set_volume(self.volume)
         self.main_menu = MainMenu(self)
-        self.deck_menu = DeckMenu(self, playerDeck=response["deck"])
+        self.deck_menu = DeckMenu(self, self.playerDeck)
         self.options_menu = OptionsMenu(self)
         self.credits_menu = CreditsMenu(self)
         self.player = Client(self)
@@ -41,15 +47,16 @@ class Game:
                 if mouse_presses[0]:
                     self.CLICKED = True
             elif event.type == pygame.KEYDOWN:
+                self.lastEvent = event
                 if event.key == pygame.K_ESCAPE:
                     self.BACK_KEY = True
-                if event.key == pygame.K_RETURN:
+                elif event.key == pygame.K_RETURN:
                     self.START_KEY = True
-                if event.key == pygame.K_BACKSPACE or event.key == pygame.K_ESCAPE:
+                elif event.key == pygame.K_ESCAPE:
                     self.BACK_KEY = True
-                if event.key == pygame.K_DOWN:
+                elif event.key == pygame.K_DOWN:
                     self.DOWN_KEY = True
-                if event.key == pygame.K_UP:
+                elif event.key == pygame.K_UP:
                     self.UP_KEY = True
 
     def reset_keys(self):

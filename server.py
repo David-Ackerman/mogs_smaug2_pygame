@@ -1,7 +1,8 @@
 import pickle
 import socket
 from _thread import *
-from duel import Duel
+from src.server.duel import Duel
+from src.server.combat import Combat
 
 server = "192.168.0.177"
 port = 5555
@@ -17,7 +18,8 @@ s.listen(4)
 print("Waiting for a connection, server started")
 
 connected = set()
-games = {}
+combats = {}
+duels = {}
 idCount = 0
 
 
@@ -30,41 +32,47 @@ def threaded_client(conn, p, gameId: int):
     while True:
         try:
             data = pickle.loads(conn.recv(8192))
-            if gameId in games:
-                game: Duel = games[gameId]
+            if gameId in duels and gameId in combats:
+                game: Duel = duels[gameId]
+                combat: Combat = combats[gameId]
+                combat.game = game
                 if not data:
                     break
-                else:
-                    if data['action'] == 'quit':
-                        break
-                    elif data['action'] == "get":
-                        game.setPlayerCards(data['player'], data['cards'])
-                    elif data['action'] == "selectEnemyCard":
-                        game.selectEnemyCard(
-                            data['player'], data['selectedCard'])
-                    elif data['action'] == "combat":
-                        game.combat(
-                            data['player'], data['attacking'], data['defending'])
-                    elif data['action'] == "drawCard":
-                        game.changeTurn()
-                        game.setPlayerCards(data['player'], data['cards'])
-                    elif data['action'] == "changePlayerTime":
-                        game.changePlayerTime()
-                        game.setPlayerCards(data['player'], data['cards'])
-                    elif data['action'] == "battlePhase":
-                        game.setBattlePhase()
-                        game.setPlayerCards(data['player'], data['cards'])
+                if data['action'] == 'quit':
+                    break
+                elif data['action'] == "get":
+                    combat.setPlayerCards(data['player'], data['cards'])
+                elif data['action'] == "selectEnemyCard":
+                    combat.selectEnemyCard(
+                        data['player'], data['selectedCard'])
+                elif data['action'] == "directAttack":
+                    combat.combat(data['player'], data['attacking'])
+                elif data['action'] == "combat":
+                    combat.combat(data['player'],
+                                  data['attacking'], data['defending'])
+                elif data['action'] == "summon":
+                    combat.summonCard(data['player'], data['summoned'], )
+                elif data['action'] == "drawCard":
+                    combat.changeTurn()
+                    combat.setPlayerCards(data['player'], data['cards'])
+                elif data['action'] == "changePlayerTime":
+                    combat.changePlayerTime()
+                    combat.setPlayerCards(data['player'], data['cards'])
+                elif data['action'] == "battlePhase":
+                    combat.setBattlePhase()
+                    combat.setPlayerCards(data['player'], data['cards'])
 
-                    conn.sendall(pickle.dumps(game))
+                conn.sendall(pickle.dumps(game))
             else:
                 break
         except Exception as e:
-            print(e)
+            print('exception', e)
             break
 
     print("Lost Connection!!")
     try:
-        del games[gameId]
+        del duels[gameId]
+        del combats[gameId]
         print("Closing game", gameId)
     except:
         pass
@@ -80,12 +88,14 @@ while True:
     gameId = (idCount - 1)//2
     conn.settimeout(60)
     if idCount % 2 == 1:
-        games[gameId] = Duel(gameId, p)
+        duels[gameId] = Duel(gameId, p)
+        combats[gameId] = Combat(gameId, duels[gameId])
         print("Creating a new game...")
     else:
-        games[gameId].ready = True
-        games[gameId].duelInit = True
-        games[gameId].turn = 1
+        duels[gameId].ready = True
+        duels[gameId].duelInit = True
+        duels[gameId].turn = 1
+        combats[gameId].ready = True
         p = 1
 
     start_new_thread(threaded_client, (conn, p, gameId))

@@ -1,8 +1,8 @@
 import pygame
-from duel import Duel
+from src.server.duel import Duel
 from network import Network
-from screens.s_duel import DuelGame
-from services.getFont import loadCustomFont
+from src.screens.s_duel import DuelGame
+from src.services.getFont import loadCustomFont
 
 width = 1280
 height = 880

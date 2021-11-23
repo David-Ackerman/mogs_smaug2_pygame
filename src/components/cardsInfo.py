@@ -2,6 +2,7 @@
 from typing import List, Tuple
 
 import pygame
+from src.interfaces.card_model import Deck
 from src.components.button import ButtonDuels
 from src.components.buttonImg import ButtonImage
 from src.components.card import Card
@@ -14,7 +15,7 @@ height = 980
 cardsInfoBtns = {
     'summon': ButtonImage('summon', 20, height - 95),
     'attack': ButtonImage('attack', 154, height - 95),
-    'confirmAttack': ButtonDuels('confirmar', 154, height - 95, (159, 187, 193), 100, 30, 14, 20),
+    'confirmAttack': ButtonDuels('confirmar', 154, height - 95, (159, 187, 193), 'rooters', 100, 30, 14, 20),
     'effect': ButtonImage('activate', 280, height - 95),
     'phaseAttack': ButtonImage('attackPhase', 20, height - 50),
     'endTurn': ButtonImage('endPhase', 220, height - 50),
@@ -24,7 +25,7 @@ cardsInfoBtns = {
 
 
 class CardsInfo:
-    def __init__(self, summon, battlePhase, endPhase, attack, confirmattack):
+    def __init__(self, summon, battlePhase, endPhase, attack, confirmattack, hasAttacked):
         self.cards = []
         self.pos = -1
         self.turn = 1
@@ -40,6 +41,7 @@ class CardsInfo:
         self.cardSelected = None
         self.isAttack = False
         self.isEnemy = False
+        self.hasAttacked: List[Deck] = hasAttacked
 
     def changeCard(self, action: str):
         self.cardSelected.deselectCard()
@@ -77,7 +79,7 @@ class CardsInfo:
             self.changeCard('left')
         elif cardsInfoBtns['goRight'].click(pos):
             self.changeCard('right')
-        elif cardsInfoBtns['attack'].click(pos) and not(self.isEnemy):
+        elif cardsInfoBtns['attack'].click(pos) and not(self.isEnemy) and not(self.cardSelected.card in self.hasAttacked):
             self.attack(self.cardSelected)
         elif cardsInfoBtns['effect'].click(pos):
             print('effect')
@@ -124,8 +126,6 @@ class CardsInfo:
                 cardsInfoBtns['goLeft'].draw(win)
             if self.pos + 1 < len(self.cards):
                 cardsInfoBtns['goRight'].draw(win)
-
-        print(self.isMyTurn)
         if myTurn:
             if self.turn > 1:
                 cardsInfoBtns['endTurn'].draw(win)
@@ -142,5 +142,5 @@ class CardsInfo:
                 elif self.isField:
                     if cardType == 'spell' or cardType == 'monster effect':
                         cardsInfoBtns['effect'].draw(win)
-                    if self.turn == 3 and cardType != 'spell' and self.turn == 3 and cardType != 'trap':
+                    if self.turn == 3 and "monster" in cardType and self.turn == 3 and not(self.cardSelected.card in self.hasAttacked):
                         cardsInfoBtns['attack'].draw(win)

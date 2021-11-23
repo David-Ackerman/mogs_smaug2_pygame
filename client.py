@@ -7,24 +7,47 @@ from src.services.getFont import loadCustomFont
 width = 1280
 height = 880
 
+images = [
+    pygame.image.load('assets/waiting/waiting1.png'),
+    pygame.image.load('assets/waiting/waiting2.png'),
+    pygame.image.load('assets/waiting/waiting3.png'),
+    pygame.image.load('assets/waiting/waiting4.png'),
+    pygame.image.load('assets/waiting/waiting5.png'),
+    pygame.image.load('assets/waiting/waiting6.png'),
+    pygame.image.load('assets/waiting/waiting7.png'),
+    pygame.image.load('assets/waiting/waiting8.png'),
+    pygame.image.load('assets/waiting/waiting9.png'),
+    pygame.image.load('assets/waiting/waiting10.png'),
+    pygame.image.load('assets/waiting/waiting11.png'),
+    pygame.image.load('assets/waiting/waiting12.png')
+]
+
 
 class Client():
     def __init__(self, game):
         self.game = game
+        self.index = 0
 
     def redrawWindow(self, win: pygame.Surface):
-        win.fill((128, 128, 128))
-        font = loadCustomFont(70, 'nunito-bold')
-        text = font.render("Waiting for Player...", True, (255, 0, 0))
-        win.blit(text, (width/2 - text.get_width() /
-                        2, height/2 - text.get_height()/2))
+        win.blit(self.image, (0, 0))
+        self.animateBackground()
         pygame.display.update()
 
+    def animateBackground(self):
+        self.index += 1
+        if self.index >= len(images):
+            self.index = 0
+        self.image = pygame.transform.scale(images[self.index], (1280, 980))
+        pygame.time.delay(60)
+
     def main(self):
+        self.index = 0
+        self.image = pygame.transform.scale(images[self.index], (1280, 980))
         self.run_display = True
         clock = pygame.time.Clock()
-        n = Network()
+        n = Network(self.game.userName)
         player = int(n.getP()['player'])
+        gameUser = self.game.userName + str(player)
         while self.run_display:
             clock.tick(30)
             try:
@@ -40,7 +63,7 @@ class Client():
             if(duel.connected()):
                 self.run_display = False
             self.redrawWindow(self.game.window)
-        self.game.duelGame = DuelGame(self.game, n, player, duel)
+        self.game.duelGame = DuelGame(self.game, n, player, gameUser, duel)
         self.game.curr_screen = self.game.duelGame
         self.game.curr_screen.render_self()
 

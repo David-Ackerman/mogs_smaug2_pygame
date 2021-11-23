@@ -21,7 +21,6 @@ class Game:
             'Masters of Gamblers')
         pygame.display.set_icon(gameIcon)
         response = loadDeckOnDisk()
-        print(response)
         self.playerDeck = response["deck"] if response['hasDeck'] else []
         self.userName = response['userName'] if response['hasDeck'] else ''
         self.volume = response['options']['vol'] if response['hasDeck'] else 0.1

@@ -1,3 +1,4 @@
+import pprint
 from src.server.duel import Duel
 from src.interfaces.card_model import Deck
 
@@ -21,34 +22,21 @@ class Combat:
         self.game.round += 1
         self.turnCounts += 1
         if self.turnCounts % 2 == 0:
-            self.game.player1['mana'] += 3
-            self.game.player2['mana'] += 3
+            for key in self.game.players:
+                self.game.players[key]['mana'] += 3
 
-    def setPlayerCards(self, player, newCards):
-        if player == 0:
-            self.game.player1 = {
-                'mana': self.game.player1['mana'],
-                'life': self.game.player1['life'],
-                'cards': {
-                    'deck': newCards['deck'],
-                    'hand': newCards['hand'],
-                    'field': self.game.player1['cards']['field'],
-                    'grave': self.game.player1['cards']['grave'],
-                },
-                'enemySelected': self.selectedAttackedP2
-            }
-        else:
-            self.game.player2 = {
-                'mana': self.game.player2['mana'],
-                'life': self.game.player2['life'],
-                'cards': {
-                    'deck': newCards['deck'],
-                    'hand': newCards['hand'],
-                    'field': self.game.player2['cards']['field'],
-                    'grave': self.game.player2['cards']['grave'],
-                },
-                'enemySelected': self.selectedAttackedP1
-            }
+    def setPlayerCards(self, username: str, newCards):
+        self.game.players[username] = {
+            'mana': self.game.players[username]['mana'],
+            'life': self.game.players[username]['life'],
+            'cards': {
+                'deck': newCards['deck'],
+                'hand': newCards['hand'],
+                'field': self.game.players[username]['cards']['field'],
+                'grave': self.game.players[username]['cards']['grave'],
+            },
+            'enemySelected': self.selectedAttackedP2 if int(username[-1:]) == 0 else self.selectedAttackedP2
+        }
 
     def setBattlePhase(self):
         self.game.turn = 3
@@ -59,57 +47,51 @@ class Combat:
         else:
             self.changePlayerTime()
 
-    def combat(self, player, attack: Deck, defense: Deck = None):
-        if player == 0:
-            playerDefending = 1
-            attacker = self.game.player1
-            defender = self.game.player2
-        else:
-            playerDefending = 0
-            attacker = self.game.player2
-            defender = self.game.player1
+    def combat(self, username: str, attack: Deck, defense: Deck = None):
+        for player in self.game.players.keys():
+            if player == username:
+                attacker: str = player
+            else:
+                defender: str = player
 
-        attacker['mana'] -= 1
+        self.game.players[attacker]['mana'] -= 1
         if defense == None:
-            defender['life'] -= attack['card_attack']
-            if defender['life'] < 0:
-                defender['life'] = 0
+            self.game.players[defender]['life'] -= attack['card_attack']
+            if self.game.players[defender]['life'] < 0:
+                self.game.players[defender]['life'] = 0
             return
         diference = attack['card_attack'] - defense['card_def']
         if diference > 0:
-            defender['life'] -= diference
-            if defender['life'] < 0:
-                defender['life'] = 0
-            self.destroyCard(playerDefending, defense)
+            self.game.players[defender]['life'] -= diference
+            if self.game.players[defender]['life'] < 0:
+                self.game.players[defender]['life'] = 0
+            self.destroyCard(defender, defense)
         elif diference == 0:
-            self.destroyCard(playerDefending, defense)
-            self.destroyCard(player, attack)
+            self.destroyCard(defender, defense)
+            self.destroyCard(username, attack)
         elif diference < 0:
-            attacker['life'] += diference
-            if attacker['life'] < 0:
-                attacker['life'] = 0
-            self.destroyCard(player, attack)
+            self.game.players[attacker]['life'] += diference
+            if self.game.players[attacker]['life'] < 0:
+                self.game.players[attacker]['life'] = 0
+            self.destroyCard(username, attack)
 
-    def summonCard(self, player, card: Deck):
+    def summonCard(self, username: str, card: Deck):
         cardPos = 'front' if card['card_type'] != 'spell' and card['card_type'] != 'trap' else 'support'
-        if player == 0:
-            self.game.player1['mana'] -= card['card_cust']
-            self.game.player1['cards']['field'][cardPos].append(card)
+        self.game.players[username]['cards']['field'][cardPos].append(card)
+        if cardPos == 'support':
             return
-        else:
-            self.game.player2['mana'] -= card['card_cust']
-            self.game.player2['cards']['field'][cardPos].append(card)
-            return
+        self.game.players[username]['mana'] -= card['card_cust']
+        return
 
     def destroyCard(self, playerDestroyed, cardDestroyed: Deck, cardPos='front'):
-        player = self.game.player1 if playerDestroyed == 0 else self.game.player2
+        player = self.game.players[playerDestroyed]
         cardIndex = player['cards']['field'][cardPos].index(
             cardDestroyed)
         player['cards']['grave'].append(
             player['cards']['field'][cardPos].pop(cardIndex))
 
-    def selectEnemyCard(self, player, enemyCard):
-        if player == 0:
+    def selectEnemyCard(self, username, enemyCard):
+        if int(username[-1:]) == 0:
             self.game.selectedAttackedP1 = enemyCard
         else:
             self.game.selectedAttackedP1 = enemyCard

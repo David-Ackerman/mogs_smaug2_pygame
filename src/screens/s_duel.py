@@ -37,16 +37,22 @@ phase = {
     3: 'Battle Phase',
 }
 
-exitBtn = ButtonDuels("X", 10, 10, (250, 20, 20, 127), 45, 45, 8)
+exitBtn = ButtonDuels("X", 10, 10, (250, 20, 20, 127),
+                      'nunito-bold', 45, 45, 8)
 
 
 class DuelGame():
-    def __init__(self, game, conn: Network, player: int, duel: Duel):
+    def __init__(self, game, conn: Network, player: int, userName: str, duel: Duel):
         self.n, self.player, self.duel, self.game = conn, player, duel, game
+        self.userId = userName
+        self.username = ''
+        self.lost = False
+        self.opUsername = ''
+        self.hasAttacked = []
         self.mana, self.opMana, self.lifePoints, self.opLifePoints = 14, 14, 200, 200
         self.attacking, self.forceEnemyBuild, self.enemySelect = False, False, None
         self.initialDeckSended, self.timer, self.myTurn = False, 240, self.duel.isMyTurn(
-            self.player)
+            self.userId)
         self.cards = {
             'deck': [],
             'hand': [],
@@ -72,13 +78,13 @@ class DuelGame():
         ), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group()
 
         self.cardsInfo = CardsInfo(
-            self.summonCard, self.changeBattlePhase, self.endPlayerTime, self.setAttack, self.confirmAttack)
+            self.summonCard, self.changeBattlePhase, self.endPlayerTime, self.setAttack, self.confirmAttack, self.hasAttacked)
 
     def decreasingTimer(self):
         while self.run_display:
             if self.timer <= 0:
                 outOfTime = {
-                    'player': self.player,
+                    'player': self.userId,
                     'action': 'changePlayerTime',
                     'cards': self.cards
                 }
@@ -94,20 +100,20 @@ class DuelGame():
 
     def gameComunicate(self):
         while self.run_display:
-            if self.opLifePoints <= 0 or self.lifePoints <= 0:
+            if self.opLifePoints <= 0 or self.lifePoints <= 0 or self.lost:
                 self.run_display = False
                 self.n.send({'action': 'quit'})
                 break
             try:
                 getAction = {
-                    'player': self.player,
+                    'player': self.userId,
                     'action': 'get',
                     'cards': self.cards
                 }
                 self.duel: Duel = self.n.send(getAction)
-                lifesMana = self.duel.getLifeMana(self.player)
-                self.mana, self.lifePoints = lifesMana[0]
-                self.opMana, self.opLifePoints = lifesMana[1]
+                lifesMana = self.duel.getLifeMana(self.userId)
+                self.mana, self.lifePoints, self.username = lifesMana[0]
+                self.opMana, self.opLifePoints, self.opUsername = lifesMana[1]
             except Exception as e:
                 self.run_display = False
                 print("Couldn't get game", e)
@@ -117,9 +123,9 @@ class DuelGame():
     def endGame(self):
         self.run_display = False
 
-        if self.opLifePoints <= 0 or self.lifePoints <= 0:
+        if self.opLifePoints <= 0 or self.lifePoints <= 0 or self.lost:
             self.game.finishGame_screen = EndDuel(
-                self.game, self.opLifePoints <= 0)
+                self.game, self.opLifePoints <= 0 and not(self.lost))
             self.game.curr_screen = self.game.finishGame_screen
             self.game.curr_screen.render_self()
         else:
@@ -229,7 +235,7 @@ class DuelGame():
         self.opCards = cards
 
     def buildField(self):
-        myself = self.duel.getMyFieldCards(self.player)
+        myself = self.duel.getMyFieldCards(self.userId)
         if myself == {}:
             return
         try:
@@ -299,6 +305,10 @@ class DuelGame():
     def drawDeckCard(self, player):
         if not(self.myTurn) or self.duel.turn != 1:
             return
+        if len(self.deckCards) == 0:
+            self.lost = True
+            return
+
         if len(self.handCards) <= 5:
             self.cards['hand'].append(self.cards['deck'].pop())
             self.handCards.append(self.deckCards.pop())
@@ -328,14 +338,14 @@ class DuelGame():
             fieldType = 'support'
         else:
             fieldType = 'front'
-        if len(self.fieldCards[fieldType]) > 2 or self.cards['hand'][cardPos]['card_cust'] > self.mana:
+        if fieldType == 'fron' and len(self.fieldCards[fieldType]) > 2 or self.cards['hand'][cardPos]['card_cust'] > self.mana:
             return
         posString += fieldType.capitalize()
         summonedCard = self.cards['hand'].pop(cardPos)
         self.handCards.pop(cardPos).kill()
 
         summonCard = {
-            'player': self.player,
+            'player': self.userId,
             'action': 'summon',
             'summoned': summonedCard,
             'cards': self.cards
@@ -356,7 +366,7 @@ class DuelGame():
                 if card['onGameId'] == self.attackingCard.cardOnDuelId:
                     attackCard = card
             combatAction = {
-                'player': self.player,
+                'player': self.userId,
                 'action': 'directAttack',
                 'cards': self.cards,
                 'attacking': attackCard,
@@ -365,6 +375,7 @@ class DuelGame():
             self.attackingCard = None
             self.attackedCard = None
             self.attacking = False
+            self.hasAttacked.append(attackCard)
             self.showCardsInfo([], False, False)
             return
         if len(self.opFieldCards['front']) == 1:
@@ -373,7 +384,7 @@ class DuelGame():
 
     def selectEnemyCard(self, card: Card):
         changeTurn = {
-            'player': self.player,
+            'player': self.userId,
             'action': 'selectEnemyCard',
             'cards': self.cards,
             'selectedCard': card.cardOnDuelId
@@ -391,7 +402,7 @@ class DuelGame():
             if card['onGameId'] == attackedCard.cardOnDuelId:
                 defenseCard = card
         combatAction = {
-            'player': self.player,
+            'player': self.userId,
             'action': 'combat',
             'cards': self.cards,
             'attacking': attackCard,
@@ -401,11 +412,12 @@ class DuelGame():
         self.attackingCard = None
         self.attackedCard = None
         self.attacking = False
+        self.hasAttacked.append(attackCard)
         self.showCardsInfo([], False, False)
 
     def endPlayerTime(self):
         changeTurn = {
-            'player': self.player,
+            'player': self.userId,
             'action': 'changePlayerTime',
             'cards': self.cards
         }
@@ -413,12 +425,14 @@ class DuelGame():
         self.showCardsInfo([], False, False)
         self.attackingCard = None
         self.attackedCard = None
+        self.hasAttacked = []
+        self.cardsInfo.hasAttacked = self.hasAttacked
         self.attacking = False
         self.timer = 240
 
     def changeBattlePhase(self):
         battlePhase = {
-            'player': self.player,
+            'player': self.userId,
             'action': 'battlePhase',
             'cards': self.cards
         }
@@ -436,10 +450,12 @@ class DuelGame():
         smallFont = loadCustomFont(24)
         highFont = loadCustomFont(30)
 
+        userText = smallFont.render(self.username, True, (50, 50, 50))
         lifeText = smallFont.render(
             "LP: " + str(self.lifePoints), True, (240, 40, 40))
         manaText = smallFont.render(
             "Mana: " + str(self.mana), True, (230, 100, 230))
+        opUserText = smallFont.render(self.opUsername, True, (50, 50, 50))
         opLifeText = smallFont.render(
             "LP: " + str(self.opLifePoints), True, (240, 40, 40))
         opManaText = smallFont.render(
@@ -470,10 +486,12 @@ class DuelGame():
             opponentCountCardsText, (deckCardsPos['opponent'][0] + (100/2 - opponentCountCardsText.get_width()/2), deckCardsPos['opponent'][1] + 50))
         win.blit(
             countDeckCardsText, (deckCardsPos['player'][0] + (100/2 - countDeckCardsText.get_width()/2), deckCardsPos['player'][1] + 50))
-        win.blit(lifeText, (width - 100, height - 150))
-        win.blit(manaText, (width - 100, height - 120))
-        win.blit(opLifeText, (400, 10))
-        win.blit(opManaText, (400, 40))
+        win.blit(userText, (width - 100, height - 150))
+        win.blit(lifeText, (width - 100, height - 120))
+        win.blit(manaText, (width - 100, height - 90))
+        win.blit(opUserText, (400, 10))
+        win.blit(opLifeText, (400, 40))
+        win.blit(opManaText, (400, 70))
         if self.myTurn:
             timerText = highFont.render(
                 "Tempo: " + str(self.timer), True, (230, 230, 230))
@@ -494,7 +512,7 @@ class DuelGame():
                 break
             clock.tick(30)
             if self.duel:
-                self.myTurn = self.duel.isMyTurn(self.player)
+                self.myTurn = self.duel.isMyTurn(self.userId)
             if not(initedTimerThread) and self.duel.connected():
                 initedTimerThread = True
 
@@ -503,7 +521,7 @@ class DuelGame():
                 _thread.start_new_thread(self.gameComunicate, ())
 
             self.check_events()
-            self.redrawWindow(self.game.window, self.player)
+            self.redrawWindow(self.game.window, self.userId)
         self.endGame()
 
     def check_events(self):
@@ -525,7 +543,7 @@ class DuelGame():
                             self.selectEnemyCard(card)
                             break
                 elif self.deckClick(pos):
-                    self.drawDeckCard(self.player)
+                    self.drawDeckCard(self.userId)
                 else:
                     i, j, h = 0, 0, 0
                     for card in self.handCards:

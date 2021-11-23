@@ -89,13 +89,37 @@ while True:
     conn.settimeout(60)
     if idCount % 2 == 1:
         duels[gameId] = Duel(gameId, p)
+        data = pickle.loads(conn.recv(8192))
+        duels[gameId].players[data['username'] + str(p)] = {'mana': 14,
+                                                            'life': 200,
+                                                            'cards': {
+                                                                'hand': [],
+                                                                'deck': [],
+                                                                'field': {
+                                                                    'front': [],
+                                                                    'support': []
+                                                                },
+                                                                'grave': [],
+                                                            }}
         combats[gameId] = Combat(gameId, duels[gameId])
         print("Creating a new game...")
     else:
+        p = 1
         duels[gameId].ready = True
         duels[gameId].duelInit = True
         duels[gameId].turn = 1
+        duels[gameId].players[data['username'] + str(p)] = {
+            'mana': 14,
+            'life': 200,
+            'cards': {
+                'hand': [],
+                'deck': [],
+                'field': {
+                    'front': [],
+                    'support': []
+                },
+                'grave': [],
+            }}
         combats[gameId].ready = True
-        p = 1
 
     start_new_thread(threaded_client, (conn, p, gameId))

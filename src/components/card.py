@@ -18,17 +18,17 @@ CARD_COMPOSE_COORD = {
         'card': (2, 2),
         'image': (10, 14),
         'name': (6, 115),
-        'attack': (55, CARD_HEIGHT['default'] - 16),
-        'defense': (55, CARD_HEIGHT['default'] - 16),
-        'cust': (55, CARD_HEIGHT['default'] - 16),
+        'attack': (6, CARD_HEIGHT['default'] - 14),
+        'defense': (CARD_WIDTH['default'] - 38, CARD_HEIGHT['default'] - 14),
+        'cust': (8, 2),
     },
     'deckMenu': {
         'card': (2, 2),
         'image': (18, 24),
         'name': (12, 230),
-        'attack': (55, CARD_HEIGHT['deckMenu'] - 16),
-        'defense': (55, CARD_HEIGHT['deckMenu'] - 16),
-        'cust': (55, CARD_HEIGHT['deckMenu'] - 16),
+        'attack': (12, CARD_HEIGHT['deckMenu'] - 24),
+        'defense': (CARD_WIDTH['deckMenu'] - 60, CARD_HEIGHT['deckMenu'] - 24),
+        'cust': (14, 4),
     }
 }
 
@@ -95,12 +95,7 @@ class Card(pygame.sprite.Sprite):
             cardImg = pygame.image.load(self.card['card_image'])
             cardName = self.myfont.render(
                 self.card['card_name'], True, (20, 20, 20))
-            cardCust = self.myfont.render(
-                str(self.card['card_cust']), True, (20, 20, 20))
-            cardAttack = self.myfont.render(
-                str(self.card['card_attack']), True, (20, 20, 20))
-            cardDef = self.myfont.render(
-                str(self.card['card_def']), True, (20, 20, 20))
+
             if self.selection == 'default':
                 bgImg = pygame.transform.scale(bgImg, (100, 140))
             cardImg = pygame.transform.scale(cardImg, IMG_WH[self.selection])
@@ -108,6 +103,16 @@ class Card(pygame.sprite.Sprite):
             self.surf.blit(bgImg, self.coords['card'])
             self.surf.blit(cardImg, self.coords['image'])
             self.surf.blit(cardName, self.coords['name'])
+            cardCust = self.myfont.render('Mana: ' +
+                                          str(self.card['card_cust']), True, (200, 100, 220))
+            self.surf.blit(cardCust, self.coords['cust'])
+            if 'monster' in self.card['card_type']:
+                cardAttack = self.myfont.render("ATK: " +
+                                                str(self.card['card_attack']), True, (100, 100, 100))
+                cardDef = self.myfont.render("DEF: " +
+                                             str(self.card['card_def']), True, (100, 100, 100))
+                self.surf.blit(cardAttack, self.coords['attack'])
+                self.surf.blit(cardDef, self.coords['defense'])
             if self.flipped and not(notFlip):
                 self.surf = pygame.transform.rotate(self.surf, 180)
 

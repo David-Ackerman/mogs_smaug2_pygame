@@ -304,10 +304,6 @@ class DeckMenu(Menu):
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_BACKSPACE or event.key == pygame.K_ESCAPE:
                     self.game.goToMenuScreen()
-                if event.key == pygame.K_DOWN:
-                    print(event)
-                if event.key == pygame.K_UP:
-                    print(event)
 
 
 class CreditsMenu(Menu):

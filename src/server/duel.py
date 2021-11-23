@@ -4,60 +4,36 @@ class Duel:
         self.duelInit = False
         self.turn = 0
         self.round = 1
-        self.player1 = {
-            'mana': 14,
-            'life': 200,
-            'cards': {
-                'hand': [],
-                'deck': [],
-                'field': {
-                    'front': [],
-                    'support': []
-                },
-                'grave': [],
-            }
-        }
-        self.player2 = {
-            'mana': 14,
-            'life': 200,
-            'cards': {
-                'hand': [],
-                'deck': [],
-                'field': {
-                    'front': [],
-                    'support': []
-                },
-                'grave': [],
-            }
-        }
+        self.players = {}
         self.selectedAttackedP1 = ''
         self.selectedAttackedP2 = ''
         self.ready: bool = False
         self.id: str = id
 
-    def getLifeMana(self, player: int):
-        if player == 0:
-            return [(self.player1['mana'], self.player1['life']), (self.player2['mana'], self.player2['life'])]
-        else:
-            return [(self.player2['mana'], self.player2['life']), (self.player1['mana'], self.player1['life'])]
+    def getLifeMana(self, username: str):
+        for player in self.players.keys():
+            if player == username:
+                p1 = self.players[player]
+                p1name = username[:-1]
+            else:
+                p2 = self.players[player]
+                p2name = username[:-1]
 
-    def isMyTurn(self, player: int):
-        if player == self.playerTime:
+        return [(p1['mana'], p1['life'], p1name), (p2['mana'], p2['life'], p2name)]
+
+    def isMyTurn(self, username: str):
+        if int(username[-1:]) == self.playerTime:
             return True
         else:
             return False
 
-    def getOpponentCards(self, player):
-        if player == 0:
-            return self.player2
-        else:
-            return self.player1
+    def getOpponentCards(self, username: str):
+        for player in self.players.keys():
+            if player != username:
+                return self.players[player]
 
-    def getMyFieldCards(self, player):
-        if player == 0:
-            return self.player1
-        else:
-            return self.player2
+    def getMyFieldCards(self, username: str):
+        return self.players[username]
 
     def connected(self) -> bool:
         return self.ready

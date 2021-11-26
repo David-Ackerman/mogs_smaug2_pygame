@@ -1,11 +1,14 @@
 import socket
 import pickle
 
+hostname = socket.gethostname()
+local_ip = socket.gethostbyname(hostname)
+
 
 class Network:
     def __init__(self, userName: str):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server = "192.168.0.177"
+        self.server = local_ip
         self.userName = userName
         self.sendedUser = False
         self.port = 5555

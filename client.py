@@ -3,9 +3,7 @@ from src.server.duel import Duel
 from network import Network
 from src.screens.s_duel import DuelGame
 from src.services.getFont import loadCustomFont
-
-width = 1280
-height = 880
+from subprocess import Popen
 
 images = [
     pygame.image.load('assets/waiting/waiting1.png'),
@@ -37,17 +35,30 @@ class Client():
         self.index += 1
         if self.index >= len(images):
             self.index = 0
-        self.image = pygame.transform.scale(images[self.index], (1280, 980))
+        self.image = pygame.transform.scale(
+            images[self.index], (self.game.WIDTH, self.game.HEIGHT))
         pygame.time.delay(60)
 
-    def main(self):
-        self.index = 0
-        self.image = pygame.transform.scale(images[self.index], (1280, 980))
-        self.run_display = True
-        clock = pygame.time.Clock()
+    def getConnection(self):
         n = Network(self.game.userName)
         player = int(n.getP()['player'])
         gameUser = self.game.userName + str(player)
+        return (n, player, gameUser)
+
+    def main(self):
+        self.index = 0
+        self.image = pygame.transform.scale(
+            images[self.index], (self.game.WIDTH, self.game.HEIGHT))
+        self.run_display = True
+        clock = pygame.time.Clock()
+        try:
+            n, player, gameUser = self.getConnection()
+        except Exception as e:
+            self.game.server = Popen('python server.py')
+            try:
+                n, player, gameUser = self.getConnection()
+            except:
+                self.run_display = False
         while self.run_display:
             clock.tick(30)
             try:
@@ -84,7 +95,7 @@ class Client():
             self.game.window.fill((128, 128, 128))
             font = loadCustomFont(60, 'nunito-bold')
             text = font.render("Click to search a duel!", 1, (255, 40, 67))
-            self.game.window.blit(text, (width/2 - text.get_width() /
-                                         2, height/2 - text.get_height()/2))
+            self.game.window.blit(text, (self.game.WIDTH/2 - text.get_width() /
+                                         2, self.game.HEIGHT/2 - text.get_height()/2))
             pygame.display.update()
         self.main()

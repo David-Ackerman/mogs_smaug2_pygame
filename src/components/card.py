@@ -17,18 +17,18 @@ CARD_COMPOSE_COORD = {
     'default': {
         'card': (2, 2),
         'image': (10, 14),
-        'name': (6, 115),
-        'attack': (6, CARD_HEIGHT['default'] - 14),
-        'defense': (CARD_WIDTH['default'] - 38, CARD_HEIGHT['default'] - 14),
-        'cust': (8, 2),
+        'name': (8, 1),
+        'attack': (6, CARD_HEIGHT['default'] - 10),
+        'defense': (40, CARD_HEIGHT['default'] - 10),
+        'cust': (6, 116),
     },
     'deckMenu': {
         'card': (2, 2),
         'image': (18, 24),
-        'name': (12, 230),
-        'attack': (12, CARD_HEIGHT['deckMenu'] - 24),
-        'defense': (CARD_WIDTH['deckMenu'] - 60, CARD_HEIGHT['deckMenu'] - 24),
-        'cust': (14, 4),
+        'name': (14, 2),
+        'attack': (12, CARD_HEIGHT['deckMenu'] - 20),
+        'defense': (80, CARD_HEIGHT['deckMenu'] - 20),
+        'cust': (12, 232),
     }
 }
 
@@ -42,7 +42,8 @@ class Card(pygame.sprite.Sprite):
         self.selectionColor = selectionColor
         self.coords = CARD_COMPOSE_COORD[self.selection]
 
-        self.myfont = loadCustomFont(14 if isDeckMenu else 8, 'nunito-bold')
+        self.myfont = loadCustomFont(12 if isDeckMenu else 7, 'nunito')
+        self.nameFont = loadCustomFont(14 if isDeckMenu else 8, 'nunito-bold')
         self.surf = pygame.Surface(
             (CARD_WIDTH[self.selection], CARD_HEIGHT[self.selection]), pygame.SRCALPHA)
         self.isBack = isBack
@@ -88,13 +89,13 @@ class Card(pygame.sprite.Sprite):
                 self.surf.fill(self.selectionColor)
             else:
                 self.surf.fill((0, 0, 0, 0))
-            cardPath = 'assets/cardTemplates/cardFront-' + \
-                ('normal' if cardType == 'knight' or cardType ==
-                 None else cardType) + '.png'
+            cardPath = ('assets/cardTemplates/cardFront-' + cardType +
+                        '.png') if cardType != None else 'assets/cardTemplates/cardFront.png'
+
             bgImg = pygame.image.load(cardPath)
             cardImg = pygame.image.load(self.card['card_image'])
-            cardName = self.myfont.render(
-                self.card['card_name'], True, (20, 20, 20))
+            cardName = self.nameFont.render(
+                self.card['card_name'], True, (230, 230, 230))
 
             if self.selection == 'default':
                 bgImg = pygame.transform.scale(bgImg, (100, 140))
@@ -104,13 +105,13 @@ class Card(pygame.sprite.Sprite):
             self.surf.blit(cardImg, self.coords['image'])
             self.surf.blit(cardName, self.coords['name'])
             cardCust = self.myfont.render('Mana: ' +
-                                          str(self.card['card_cust']), True, (200, 100, 220))
+                                          str(self.card['card_cust']), True, (220, 60, 220))
             self.surf.blit(cardCust, self.coords['cust'])
             if 'monster' in self.card['card_type']:
                 cardAttack = self.myfont.render("ATK: " +
-                                                str(self.card['card_attack']), True, (100, 100, 100))
+                                                str(self.card['card_attack']), True, (180, 180, 180))
                 cardDef = self.myfont.render("DEF: " +
-                                             str(self.card['card_def']), True, (100, 100, 100))
+                                             str(self.card['card_def']), True, (180, 180, 180))
                 self.surf.blit(cardAttack, self.coords['attack'])
                 self.surf.blit(cardDef, self.coords['defense'])
             if self.flipped and not(notFlip):

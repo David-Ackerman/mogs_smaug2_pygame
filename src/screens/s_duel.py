@@ -12,42 +12,42 @@ from src.services.getFont import loadCustomFont
 from src.services.saveDeck import loadDeckOnDisk
 from src.screens.menu import EndDuel
 
-width = 1280
-height = 980
-handCardsPos = {'player': [
-    410, height - 150], 'opponent': [width - 110, 10]}
-deckCardsPos = {'player': [
-    width - 120, height - 320], 'opponent': [410, 200]}
-graveCardPos = {'player': [
-    width - 120, height - 480], 'opponent': [410, 360]}
-fieldCardPos = {
-    'playerFront': [600, 500],
-    'opFront': [width - 342, 334],
-    'playerSupport': [600, 654],
-    'opSupport': [width - 342, 182],
-}
 
 BOARD_BG = pygame.image.load("assets/duelBoard.png")
 CARD_HAND = pygame.image.load("assets/cardHand.png")
 SIDE_DETAILS = pygame.image.load("assets/sideDetails.png")
-BOARD_BG = pygame.transform.scale(BOARD_BG, (880, 660))
 phase = {
     1: 'Draw Phase',
     2: 'Summon Phase',
     3: 'Battle Phase',
 }
 
-exitBtn = ButtonDuels("X", 10, 10, (250, 20, 20, 127),
-                      'nunito-bold', 45, 45, 8)
-
 
 class DuelGame():
     def __init__(self, game, conn: Network, player: int, userName: str, duel: Duel):
         self.n, self.player, self.duel, self.game = conn, player, duel, game
-        self.userId = userName
-        self.username = ''
+        self.handCardsPos = {'player': [
+            410, self.game.HEIGHT - 150], 'opponent': [self.game.WIDTH - 110, 10]}
+        self.deckCardsPos = {'player': [
+            self.game.WIDTH - 120, self.game.HEIGHT - 320], 'opponent': [410, 200]}
+        self.graveCardPos = {'player': [
+            self.game.WIDTH - 120, self.game.HEIGHT - 480], 'opponent': [410, 360]}
+        self.fieldCardPos = {
+            'playerFront': [600, 500],
+            'opFront': [self.game.WIDTH - 342, 334],
+            'playerSupport': [600, 654],
+            'opSupport': [self.game.WIDTH - 342, 182],
+        }
+        self.userId, self.username, self.opUsername = userName, '', ''
+        self.BOARD_BG = pygame.transform.scale(
+            BOARD_BG, (self.game.WIDTH - 400, self.game.HEIGHT - 320))
+        self.CARD_HAND = pygame.transform.scale(
+            CARD_HAND, (self.game.WIDTH - 400, 160))
+        self.SIDE_DETAILS = pygame.transform.scale(
+            SIDE_DETAILS, (400, self.game.HEIGHT))
+        self.exitBtn = ButtonDuels("X", 10, 10, (250, 20, 20, 127),
+                                   'nunito-bold', 45, 45, 8)
         self.lost = False
-        self.opUsername = ''
         self.hasAttacked = []
         self.mana, self.opMana, self.lifePoints, self.opLifePoints = 14, 14, 200, 200
         self.attacking, self.forceEnemyBuild, self.enemySelect = False, False, None
@@ -73,7 +73,6 @@ class DuelGame():
             'front': list[Card](),
             'support': list[Card]()
         }
-        self.BOARD_BG, self.CARD_HAND, self.SIDE_DETAILS = BOARD_BG, CARD_HAND, SIDE_DETAILS
         self.deckCardsSprite, self.handCardsSprite, self.fieldCardsFrontSprite, self.fieldCardsSupportSprite, self.graveCardsSprite, self.opHandCardsSprite, self.opFieldFrontCardsSprite, self.opFieldSupportCardsSprite, self.opGraveCardsSprite, self.opDeckCardsSprite = pygame.sprite.Group(
         ), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group()
 
@@ -155,17 +154,17 @@ class DuelGame():
             self.cards['deck'].append(self.playerDeck[i])
             self.deckCards.append(
                 Card(self.playerDeck[i], True, False))
-            self.deckCards[i].rect.x = deckCardsPos['player'][0]
+            self.deckCards[i].rect.x = self.deckCardsPos['player'][0]
             self.deckCards[i].rect.y = (
-                deckCardsPos['player'][1] - (2 * i))
+                self.deckCardsPos['player'][1] - (2 * i))
         for i in range(4):
             self.cards['hand'].append(self.cards['deck'].pop())
             self.handCards.append(self.deckCards.pop())
             self.handCards[i].isBack = False
             self.handCards[i].build_card()
-            self.handCards[i].rect.x = handCardsPos['player'][0] + \
+            self.handCards[i].rect.x = self.handCardsPos['player'][0] + \
                 (i * 120)
-            self.handCards[i].rect.y = handCardsPos['player'][1]
+            self.handCards[i].rect.y = self.handCardsPos['player'][1]
 
         self.handCardsSprite.add(self.handCards)
         self.deckCardsSprite.add(self.deckCards)
@@ -184,9 +183,9 @@ class DuelGame():
             for i in range(len(cards['deck'])):
                 self.opDeckCards.append(
                     Card(cards['deck'][i], True, False, flip=True))
-                self.opDeckCards[i].rect.x = deckCardsPos['opponent'][0]
+                self.opDeckCards[i].rect.x = self.deckCardsPos['opponent'][0]
                 self.opDeckCards[i].rect.y = (
-                    deckCardsPos['opponent'][1] - (2 * i))
+                    self.deckCardsPos['opponent'][1] - (2 * i))
             self.opDeckCardsSprite = pygame.sprite.Group(self.opDeckCards)
         if(cards['hand'] != self.opCards['hand']):
             self.opHandCards = []
@@ -194,9 +193,9 @@ class DuelGame():
             for i in range(len(cards['hand'])):
                 self.opHandCards.append(
                     Card(cards['hand'][i], True, False))
-                self.opHandCards[i].rect.x = handCardsPos['opponent'][0] - \
+                self.opHandCards[i].rect.x = self.handCardsPos['opponent'][0] - \
                     (i * 120)
-                self.opHandCards[i].rect.y = handCardsPos['opponent'][1]
+                self.opHandCards[i].rect.y = self.handCardsPos['opponent'][1]
             self.opHandCardsSprite.add(self.opHandCards)
         fieldCondition = cards['field']['front'] != self.opCards['field']['front']
         supportCondition = cards['field']['support'] != self.opCards['field']['support']
@@ -207,9 +206,9 @@ class DuelGame():
             for i in range(len(cards['field']['front'])):
                 self.opFieldCards['front'].append(
                     Card(cards['field']['front'][i], False, False, self.enemySelect == cards['field']['front'][i]['onGameId'], (200, 40, 20, 255), flip=True))
-                self.opFieldCards['front'][i].rect.x = fieldCardPos['opFront'][0] - \
+                self.opFieldCards['front'][i].rect.x = self.fieldCardPos['opFront'][0] - \
                     (i * 135)
-                self.opFieldCards['front'][i].rect.y = fieldCardPos['opFront'][1]
+                self.opFieldCards['front'][i].rect.y = self.fieldCardPos['opFront'][1]
             self.opFieldFrontCardsSprite.add(self.opFieldCards['front'])
             self.forceEnemyBuild = False
         if(supportCondition):
@@ -218,9 +217,9 @@ class DuelGame():
             for i in range(len(cards['field']['support'])):
                 self.opFieldCards['support'].append(
                     Card(cards['field']['support'][i], True, False, flip=True))
-                self.opFieldCards['support'][i].rect.x = fieldCardPos['opSupport'][0] - \
+                self.opFieldCards['support'][i].rect.x = self.fieldCardPos['opSupport'][0] - \
                     (i * 135)
-                self.opFieldCards['support'][i].rect.y = fieldCardPos['opSupport'][1]
+                self.opFieldCards['support'][i].rect.y = self.fieldCardPos['opSupport'][1]
             self.opFieldSupportCardsSprite.add(self.opFieldCards['support'])
         if graveCondition:
             self.opGraveCards = []
@@ -228,8 +227,8 @@ class DuelGame():
             for i in range(len(cards['grave'])):
                 self.opGraveCards.append(
                     Card(cards['grave'][i], False, False, flip=True))
-                self.opGraveCards[i].rect.x = graveCardPos['opponent'][0]
-                self.opGraveCards[i].rect.y = graveCardPos['opponent'][1] - \
+                self.opGraveCards[i].rect.x = self.graveCardPos['opponent'][0]
+                self.opGraveCards[i].rect.y = self.graveCardPos['opponent'][1] - \
                     (i * 2)
             self.opGraveCardsSprite.add(self.opGraveCards)
         self.opCards = cards
@@ -252,9 +251,9 @@ class DuelGame():
             for i in range(len(cards['field']['front'])):
                 self.fieldCards['front'].append(
                     Card(cards['field']['front'][i], False, False))
-                self.fieldCards['front'][i].rect.x = fieldCardPos['playerFront'][0] + \
+                self.fieldCards['front'][i].rect.x = self.fieldCardPos['playerFront'][0] + \
                     (i * 135)
-                self.fieldCards['front'][i].rect.y = fieldCardPos['playerFront'][1]
+                self.fieldCards['front'][i].rect.y = self.fieldCardPos['playerFront'][1]
             self.fieldCardsFrontSprite.add(self.fieldCards['front'])
         if(supportCondition):
             self.fieldCards['support'] = []
@@ -262,9 +261,9 @@ class DuelGame():
             for i in range(len(cards['field']['support'])):
                 self.fieldCards['support'].append(
                     Card(cards['field']['support'][i], True, False))
-                self.fieldCards['support'][i].rect.x = fieldCardPos['playerSupport'][0] + \
+                self.fieldCards['support'][i].rect.x = self.fieldCardPos['playerSupport'][0] + \
                     (i * 135)
-                self.fieldCards['support'][i].rect.y = fieldCardPos['playerSupport'][1]
+                self.fieldCards['support'][i].rect.y = self.fieldCardPos['playerSupport'][1]
             self.fieldCardsSupportSprite.add(self.fieldCards['support'])
         if graveCondition:
             self.graveCards = []
@@ -272,8 +271,8 @@ class DuelGame():
             for i in range(len(cards['grave'])):
                 self.graveCards.append(
                     Card(cards['grave'][i], False, False))
-                self.graveCards[i].rect.x = graveCardPos['player'][0]
-                self.graveCards[i].rect.y = graveCardPos['player'][1] + \
+                self.graveCards[i].rect.x = self.graveCardPos['player'][0]
+                self.graveCards[i].rect.y = self.graveCardPos['player'][1] + \
                     (i * 2)
             self.graveCardsSprite.add(self.graveCards)
 
@@ -285,8 +284,8 @@ class DuelGame():
     def deckClick(self, pos: Tuple[int, int]):
         x1 = pos[0]
         y1 = pos[1]
-        y = deckCardsPos['player'][1]
-        x = deckCardsPos['player'][0]
+        y = self.deckCardsPos['player'][1]
+        x = self.deckCardsPos['player'][0]
         if x <= x1 <= x + 100 and y <= y1 <= y + 140:
             return True
         else:
@@ -295,8 +294,8 @@ class DuelGame():
     def graveClick(self, pos: Tuple[int, int]):
         x1 = pos[0]
         y1 = pos[1]
-        y = graveCardPos['player'][1]
-        x = graveCardPos['player'][0]
+        y = self.graveCardPos['player'][1]
+        x = self.graveCardPos['player'][0]
         if x <= x1 <= x + 100 and y <= y1 <= y + 140:
             return True
         else:
@@ -314,9 +313,9 @@ class DuelGame():
             self.handCards.append(self.deckCards.pop())
             self.handCards[-1].isBack = False
             self.handCards[-1].build_card()
-            self.handCards[-1].rect.x = handCardsPos['player'][0] + \
+            self.handCards[-1].rect.x = self.handCardsPos['player'][0] + \
                 ((len(self.handCards) - 1) * 120)
-            self.handCards[-1].rect.y = handCardsPos['player'][1]
+            self.handCards[-1].rect.y = self.handCardsPos['player'][1]
         drawCard = {
             'player': player,
             'action': 'drawCard',
@@ -328,8 +327,9 @@ class DuelGame():
     def updateHandPos(self):
         self.handCardsSprite.empty()
         for i in range(len(self.handCards)):
-            self.handCards[i].rect.x = handCardsPos['player'][0] + (i * 120)
-            self.handCards[i].rect.y = handCardsPos['player'][1]
+            self.handCards[i].rect.x = self.handCardsPos['player'][0] + \
+                (i * 120)
+            self.handCards[i].rect.y = self.handCardsPos['player'][1]
         self.handCardsSprite.add(self.handCards)
 
     def summonCard(self, cardPos: int):
@@ -468,7 +468,7 @@ class DuelGame():
             self.CARD_HAND, (400, 0))
         win.blit(self.BOARD_BG, (400, 160))
         win.blit(
-            self.CARD_HAND, (400, height - 160))
+            self.CARD_HAND, (400, self.game.HEIGHT - 160))
         win.blit(self.SIDE_DETAILS, (0, 0))
         self.cardsInfo.draw(win, self.myTurn)
         self.opDeckCardsSprite.draw(win)
@@ -481,14 +481,14 @@ class DuelGame():
         self.handCardsSprite.draw(win)
         self.deckCardsSprite.draw(win)
         self.graveCardsSprite.draw(win)
-        exitBtn.draw(win)
+        self.exitBtn.draw(win)
         win.blit(
-            opponentCountCardsText, (deckCardsPos['opponent'][0] + (100/2 - opponentCountCardsText.get_width()/2), deckCardsPos['opponent'][1] + 50))
+            opponentCountCardsText, (self.deckCardsPos['opponent'][0] + (100/2 - opponentCountCardsText.get_width()/2), self.deckCardsPos['opponent'][1] + 50))
         win.blit(
-            countDeckCardsText, (deckCardsPos['player'][0] + (100/2 - countDeckCardsText.get_width()/2), deckCardsPos['player'][1] + 50))
-        win.blit(userText, (width - 100, height - 150))
-        win.blit(lifeText, (width - 100, height - 120))
-        win.blit(manaText, (width - 100, height - 90))
+            countDeckCardsText, (self.deckCardsPos['player'][0] + (100/2 - countDeckCardsText.get_width()/2), self.deckCardsPos['player'][1] + 50))
+        win.blit(userText, (self.game.WIDTH - 100, self.game.HEIGHT - 150))
+        win.blit(lifeText, (self.game.WIDTH - 100, self.game.HEIGHT - 120))
+        win.blit(manaText, (self.game.WIDTH - 100, self.game.HEIGHT - 90))
         win.blit(opUserText, (400, 10))
         win.blit(opLifeText, (400, 40))
         win.blit(opManaText, (400, 70))
@@ -496,10 +496,12 @@ class DuelGame():
             timerText = highFont.render(
                 "Tempo: " + str(self.timer), True, (230, 230, 230))
             win.blit(timerText, (390 - timerText.get_width(), 10))
+
         pygame.display.update()
 
     def render_self(self):
         self.run_display = True
+
         deck = loadDeckOnDisk()["deck"]
         self.initDuel(deck)
         clock = pygame.time.Clock()
@@ -527,12 +529,12 @@ class DuelGame():
     def check_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
+                self.game.finish()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
 
                 self.cardsInfo.checkClicks(pos)
-                if exitBtn.click(pos):
+                if self.exitBtn.click(pos):
                     self.run_display = False
                     self.n.send({'action': 'quit'})
                     break

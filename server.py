@@ -4,7 +4,10 @@ from _thread import *
 from src.server.duel import Duel
 from src.server.combat import Combat
 
-server = "192.168.0.177"
+hostname = socket.gethostname()
+local_ip = socket.gethostbyname(hostname)
+
+server = local_ip
 port = 5555
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -1,3 +1,4 @@
+from subprocess import Popen
 import pygame
 from pygame.locals import *
 from client import Client
@@ -10,13 +11,16 @@ from src.services.saveDeck import loadDeckOnDisk
 class Game:
     def __init__(self):
         pygame.init()
+        infos = pygame.display.Info()
+        self.WIDTH, self.HEIGHT = infos.current_w, infos.current_h - 80
         self.BLACK, self.WHITE = (0, 0, 0), (255, 255, 255)
         gameIcon = pygame.image.load('assets/gameIcon.jpg')
         self.running, self.playing = True, False
+        self.server = None
         self.lastEvent = None
         self.UP_KEY, self.DOWN_KEY, self.START_KEY, self.BACK_KEY, self.CLICKED = False, False, False, False, False
-        self.DISPLAY_W, self.DISPLAY_H = 1280, 980
-        self.window = pygame.display.set_mode((self.DISPLAY_W, self.DISPLAY_H))
+        self.DISPLAY_W, self.DISPLAY_H = self.WIDTH, self.HEIGHT
+        self.window = pygame.display.set_mode((self.WIDTH, self.HEIGHT))
         pygame.display.set_caption(
             'Masters of Gamblers')
         pygame.display.set_icon(gameIcon)
@@ -29,17 +33,25 @@ class Game:
         self.music.play()
         self.music.set_volume(self.volume)
         self.main_menu = MainMenu(self)
+        self.help_menu = HelpMenu(self)
         self.deck_menu = DeckMenu(self, self.playerDeck)
         self.options_menu = OptionsMenu(self)
         self.credits_menu = CreditsMenu(self)
         self.player = Client(self)
         self.curr_screen = self.main_menu
 
+    def finish(self):
+        self.running, self.playing = False, False
+        self.curr_screen.run_display = False
+        if self.server:
+            Popen.kill(self.server)
+        pygame.quit()
+        sys.exit()
+
     def check_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                self.running, self.playing = False, False
-                self.curr_screen.run_display = False
+                self.finish()
 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_presses = pygame.mouse.get_pressed()

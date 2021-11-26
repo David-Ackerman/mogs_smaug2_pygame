@@ -68,7 +68,8 @@ class MainMenu(Menu):
         self.startx, self.starty = self.mid_w, self.mid_h + 30
         self.optionsx, self.optionsy = self.mid_w, self.mid_h + 80
         self.deckx, self.decky = self.mid_w, self.mid_h + 130
-        self.creditsx, self.creditsy = self.mid_w, self.mid_h + 180
+        self.helpx, self.helpy = self.mid_w, self.mid_h + 180
+        self.creditsx, self.creditsy = self.mid_w, self.mid_h + 230
         self.cursor_rect.midtop = (self.startx + self.offset, self.starty)
 
     def render_self(self):
@@ -82,6 +83,7 @@ class MainMenu(Menu):
             self.game.draw_text("Start Game", 40, self.startx, self.starty)
             self.game.draw_text("Options", 40, self.optionsx, self.optionsy)
             self.game.draw_text("Deck", 40, self.deckx, self.decky)
+            self.game.draw_text("Help", 40, self.helpx, self.helpy)
             self.game.draw_text("Credits", 40, self.creditsx, self.creditsy)
             self.draw_cursor(),
             self.blit_screen()
@@ -98,6 +100,10 @@ class MainMenu(Menu):
                 self.state = "Deck"
             elif self.state == "Deck":
                 self.cursor_rect.midtop = (
+                    self.helpx + self.offset, self.helpy)
+                self.state = "Help"
+            elif self.state == "Help":
+                self.cursor_rect.midtop = (
                     self.creditsx + self.offset, self.creditsy)
                 self.state = "Credits"
             elif self.state == "Credits":
@@ -110,6 +116,10 @@ class MainMenu(Menu):
                     self.creditsx + self.offset, self.creditsy)
                 self.state = "Credits"
             elif self.state == "Credits":
+                self.cursor_rect.midtop = (
+                    self.helpx + self.offset, self.helpy)
+                self.state = "Help"
+            elif self.state == "Help":
                 self.cursor_rect.midtop = (
                     self.deckx + self.offset, self.decky)
                 self.state = "Deck"
@@ -131,6 +141,8 @@ class MainMenu(Menu):
                 self.game.curr_screen = self.game.options_menu
             elif self.state == "Deck":
                 self.game.curr_screen = self.game.deck_menu
+            elif self.state == "Help":
+                self.game.curr_screen = self.game.help_menu
             elif self.state == "Credits":
                 self.game.curr_screen = self.game.credits_menu
 
@@ -231,7 +243,7 @@ class DeckMenu(Menu):
         self.scroll = 0
         self.column = 0
         self.all_sprites_list = pygame.sprite.Group()
-        self.playerCardPos = [10, 100]
+        self.playerCardPos = [20, 100]
         for card in cards:
             self.cards.append(
                 Card(card=card, isBack=False, isDeckMenu=True,
@@ -239,22 +251,24 @@ class DeckMenu(Menu):
             )
 
         self.all_sprites_list.add(self.cards)
-        self.breaks = list(range(1, math.ceil(len(cards) / 5)))
+        self.brakValue = math.floor(self.game.WIDTH / 240)
+        self.breaks = list(range(1, math.ceil(len(cards) / self.brakValue)))
 
     def updateCardsPos(self):
         for i in range(len(self.cards)):
-            self.cards[i].rect.x = self.playerCardPos[0] + (self.column * 264)
+            self.cards[i].rect.x = self.playerCardPos[0] + (self.column * 240)
             self.cards[i].rect.y = self.playerCardPos[1] + \
                 ((self.row + self.scroll) * 308)
             self.column += 1
-            if (i + 1) / 5 in self.breaks:
+            if (i + 1) / self.brakValue in self.breaks:
                 self.row += 1
                 self.column = 0
 
     def render_self(self):
         self.run_display = True
         self.updateCardsPos()
-        self.button = ButtonImage('save', 1100, 820)
+        self.button = ButtonImage(
+            'save', self.game.WIDTH - 160, self.game.HEIGHT - 80)
 
         clock = pygame.time.Clock()
         while self.run_display:
@@ -264,9 +278,9 @@ class DeckMenu(Menu):
             self.all_sprites_list.draw(self.game.window)
             self.button.draw(self.game.window)
             pygame.draw.rect(
-                self.game.window, (self.game.BLACK), (0, 0, 1280, 80))
+                self.game.window, (self.game.BLACK), (0, 0, self.game.WIDTH, 80))
             self.game.draw_text(
-                "Monte seu deck clicando nas cartas que deseja", 40, self.game.DISPLAY_W / 2, 40)
+                "Monte seu deck clicando nas cartas que deseja", 40, self.game.WIDTH / 2, 40)
 
             self.blit_screen()
             clock.tick(30)
@@ -328,6 +342,34 @@ class CreditsMenu(Menu):
 
     def check_input(self):
         if self.game.BACK_KEY:
+            self.game.goToMenuScreen()
+        elif self.game.START_KEY:
+            pass
+
+
+class HelpMenu(Menu):
+    def __init__(self, game):
+        Menu.__init__(self, game)
+
+    def render_self(self):
+        self.run_display = True
+        help = pygame.image.load('assets/help.png')
+        help = pygame.transform.scale(
+            help, (self.game.DISPLAY_W, self.game.DISPLAY_H))
+        clock = pygame.time.Clock()
+        while self.run_display:
+            clock.tick(30)
+            self.game.check_events()
+            self.check_input()
+            self.game.window.fill(self.game.BLACK)
+            self.game.window.blit(
+                help, (0, 0))
+
+            self.blit_screen()
+
+    def check_input(self):
+        if self.game.BACK_KEY:
+            self.run_display = False
             self.game.goToMenuScreen()
         elif self.game.START_KEY:
             pass

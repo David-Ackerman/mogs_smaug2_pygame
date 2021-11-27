@@ -4,9 +4,11 @@ from src.interfaces.card_model import Deck, LoadDeckResponse
 
 
 def saveDeckOnDisk(deck: list[Deck], userName: str, options):
-    if os.path.exists("storage/playerData.npy"):
-        os.remove("storage/playerData.npy")
-    np.save("storage/playerData.npy", [{
+    if os.path.exists("/mogs/playerData.npy"):
+        os.remove("/mogs/playerData.npy")
+    if not os.path.exists('/mogs'):
+        os.mkdir('/mogs')
+    np.save("/mogs/playerData.npy", [{
         "userName": userName,
         "options": options,
         "deck": deck
@@ -18,7 +20,7 @@ def loadDeckOnDisk() -> LoadDeckResponse:
     response: LoadDeckResponse = {"hasDeck": False,
                                   "userName": '',  "options": {},  "deck": []}
     try:
-        returnData = np.load("storage/playerData.npy", allow_pickle=True)
+        returnData = np.load("/mogs/playerData.npy", allow_pickle=True)
         response["userName"] = returnData[0]["userName"]
         response["options"] = returnData[0]["options"]
         response["deck"] = returnData[0]["deck"].copy()

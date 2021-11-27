@@ -1,20 +1,22 @@
+from src.services.saveDeck import loadDeckOnDisk
+from src.services.getFont import loadCustomFont
+from src.screens.s_duel import DuelGame
+from src.screens.menu import *
+from client import Client
 from subprocess import Popen
 import pygame
 from pygame.locals import *
-from client import Client
-from src.screens.menu import *
-from src.screens.s_duel import DuelGame
-from src.services.getFont import loadCustomFont
-from src.services.saveDeck import loadDeckOnDisk
+from src.services.compressImg import compressAssets, decompressAssets
 
 
 class Game:
     def __init__(self):
+        decompressAssets()
         pygame.init()
         infos = pygame.display.Info()
         self.WIDTH, self.HEIGHT = infos.current_w, infos.current_h - 80
         self.BLACK, self.WHITE = (0, 0, 0), (255, 255, 255)
-        gameIcon = pygame.image.load('assets/gameIcon.jpg')
+        gameIcon = pygame.image.load('assets\images\gameIcon.jpg')
         self.running, self.playing = True, False
         self.server = None
         self.lastEvent = None
@@ -29,9 +31,8 @@ class Game:
         self.userName = response['userName'] if response['hasDeck'] else ''
         self.volume = response['options']['vol'] if response['hasDeck'] else 0.1
         self.music = pygame.mixer.music
-        self.music.load("assets/sounds/dramatic.wav")
-        self.music.play()
         self.music.set_volume(self.volume)
+
         self.main_menu = MainMenu(self)
         self.help_menu = HelpMenu(self)
         self.deck_menu = DeckMenu(self, self.playerDeck)
@@ -41,6 +42,7 @@ class Game:
         self.curr_screen = self.main_menu
 
     def finish(self):
+        compressAssets()
         self.running, self.playing = False, False
         self.curr_screen.run_display = False
         if self.server:
@@ -73,9 +75,9 @@ class Game:
     def reset_keys(self):
         self.UP_KEY, self.DOWN_KEY, self.BACK_KEY, self.START_KEY, self.CLICKED = False, False, False, False, False
 
-    def draw_text(self, text, size, x, y, font='magic'):
+    def draw_text(self, text, size, x, y, color=(255, 255, 255), font='magic'):
         font = loadCustomFont(size, font)
-        text_surface = font.render(text, True, self.WHITE)
+        text_surface = font.render(text, True, color)
         text_rect = text_surface.get_rect()
         text_rect.center = (x, y)
         self.window.blit(text_surface, text_rect)

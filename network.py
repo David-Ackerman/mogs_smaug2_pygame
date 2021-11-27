@@ -6,9 +6,9 @@ local_ip = socket.gethostbyname(hostname)
 
 
 class Network:
-    def __init__(self, userName: str):
+    def __init__(self, userName: str, ip: str = None):
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server = local_ip
+        self.server = local_ip if ip == None else ip
         self.userName = userName
         self.sendedUser = False
         self.port = 5555

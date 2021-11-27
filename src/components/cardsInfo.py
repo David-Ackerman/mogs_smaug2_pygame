@@ -9,39 +9,25 @@ from src.components.card import Card
 from src.services.getFont import loadCustomFont
 from src.services.renders import blit_complex_text
 
-width = 1280
-height = 980
-
-cardsInfoBtns = {
-    'summon': ButtonImage('summon', 20, height - 95),
-    'attack': ButtonImage('attack', 154, height - 95),
-    'confirmAttack': ButtonDuels('confirmar', 154, height - 95, (159, 187, 193), 'rooters', 100, 30, 14, 20),
-    'effect': ButtonImage('activate', 280, height - 95),
-    'phaseAttack': ButtonImage('attackPhase', 20, height - 50),
-    'endTurn': ButtonImage('endPhase', 220, height - 50),
-    'goLeft': ButtonImage('left', 20, 430),
-    'goRight': ButtonImage('right', 350, 430),
-}
-
 
 class CardsInfo:
-    def __init__(self, summon, battlePhase, endPhase, attack, confirmattack, hasAttacked):
+    def __init__(self, width, height, summon, battlePhase, endPhase, attack, confirmattack, hasAttacked):
         self.cards = []
-        self.pos = -1
-        self.turn = 1
-        self.isField = False
-        self.isHand = False
-        self.isMyTurn = True
-        self.round = 0
-        self.summonCard = summon
-        self.battlePhase = battlePhase
-        self.endPhase = endPhase
-        self.attack = attack
-        self.confirmattack = confirmattack
-        self.cardSelected = None
-        self.isAttack = False
-        self.isEnemy = False
+        self.width, self.height, self.summonCard, self.battlePhase, self.endPhase, self.attack, self.confirmattack = width, height, summon, battlePhase, endPhase, attack, confirmattack
+
+        self.pos, self.turn, self.round = -1, 1, 0
+        self.isField, self.isHand, self.isMyTurn, self.isAttack, self.isEnemy, self.cardSelected = False, False, True, False, False, None
         self.hasAttacked: List[Deck] = hasAttacked
+        self.cardsInfoBtns = {
+            'summon': ButtonImage('summon', 20, self.height - 95),
+            'attack': ButtonImage('attack', self.width/2 - 60, self.height - 95),
+            'confirmAttack': ButtonImage('confirm', self.width/2 - 60, self.height - 95),
+            'effect': ButtonImage('activate', self.width - 120, self.height - 95),
+            'phaseAttack': ButtonImage('attackPhase', 20, self.height - 50),
+            'endTurn': ButtonImage('endPhase', self.width - 200, self.height - 50),
+            'goLeft': ButtonImage('left', 20, (self.height / 2) - 20),
+            'goRight': ButtonImage('right', self.width - 50, (self.height / 2) - 20),
+        }
 
     def changeCard(self, action: str):
         self.cardSelected.deselectCard()
@@ -75,32 +61,32 @@ class CardsInfo:
             self.cardSelected = None
 
     def checkClicks(self, pos: Tuple[int, int], ):
-        if cardsInfoBtns['goLeft'].click(pos):
+        if self.cardsInfoBtns['goLeft'].click(pos):
             self.changeCard('left')
-        elif cardsInfoBtns['goRight'].click(pos):
+        elif self.cardsInfoBtns['goRight'].click(pos):
             self.changeCard('right')
-        elif cardsInfoBtns['attack'].click(pos) and not(self.isEnemy) and not(self.cardSelected.card in self.hasAttacked):
+        elif self.cardsInfoBtns['attack'].click(pos) and not(self.isEnemy) and not(self.cardSelected.card in self.hasAttacked):
             self.attack(self.cardSelected)
-        elif cardsInfoBtns['effect'].click(pos):
+        elif self.cardsInfoBtns['effect'].click(pos):
             print('effect')
-        elif cardsInfoBtns['confirmAttack'].click(pos) and self.isAttack and self.isEnemy:
+        elif self.cardsInfoBtns['confirmAttack'].click(pos) and self.isAttack and self.isEnemy:
             self.confirmattack(self.cardSelected)
-        elif cardsInfoBtns['summon'].click(pos) and self.isHand and self.isMyTurn and self.turn == 2:
+        elif self.cardsInfoBtns['summon'].click(pos) and self.isHand and self.isMyTurn and self.turn == 2:
             self.summonCard(self.pos)
-        elif cardsInfoBtns['phaseAttack'].click(pos) and self.isMyTurn and self.turn == 2 and self.round > 1:
+        elif self.cardsInfoBtns['phaseAttack'].click(pos) and self.isMyTurn and self.turn == 2 and self.round > 1:
             self.battlePhase()
-        elif cardsInfoBtns['endTurn'].click(pos) and self.isMyTurn and self.turn > 1:
+        elif self.cardsInfoBtns['endTurn'].click(pos) and self.isMyTurn and self.turn > 1:
             self.endPhase()
 
     def draw(self, win: pygame.Surface, myTurn):
         self.isMyTurn = myTurn
         if len(self.cards) > 0:
             pygame.draw.rect(
-                win, (0, 0, 0, 0), (10, 70, 380, 780))
+                win, (0, 0, 0, 0), (10, 70, self.width - 20, 780))
 
             cardType = self.cardSelected.card['card_type']
             cardImg = pygame.image.load(self.cardSelected.card['card_image'])
-            cardImg = pygame.transform.scale(cardImg, (370, 400))
+            cardImg = pygame.transform.scale(cardImg, (self.width - 30, 400))
             name = self.font.render(
                 self.cardSelected.card['card_name'], True, (233, 233, 233))
             cust = self.font.render(
@@ -120,27 +106,27 @@ class CardsInfo:
                 win.blit(defense, (238, 550))
 
             blit_complex_text(
-                win, "Descrição: " + self.cardSelected.card['card_description'], (18, 585), self.font, 364, (233, 233, 233))
+                win, "Descrição: " + self.cardSelected.card['card_description'], (18, 585), self.font, self.width - 34, (233, 233, 233))
 
             if len(self.cards) >= 2 and self.pos > 0:
-                cardsInfoBtns['goLeft'].draw(win)
+                self.cardsInfoBtns['goLeft'].draw(win)
             if self.pos + 1 < len(self.cards):
-                cardsInfoBtns['goRight'].draw(win)
+                self.cardsInfoBtns['goRight'].draw(win)
         if myTurn:
             if self.turn > 1:
-                cardsInfoBtns['endTurn'].draw(win)
+                self.cardsInfoBtns['endTurn'].draw(win)
             if self.round > 1 and self.turn == 2:
-                cardsInfoBtns['phaseAttack'].draw(win)
+                self.cardsInfoBtns['phaseAttack'].draw(win)
             if len(self.cards) > 0:
                 if self.isAttack and self.isEnemy:
-                    cardsInfoBtns['confirmAttack'].draw(win)
+                    self.cardsInfoBtns['confirmAttack'].draw(win)
                 elif self.isHand:
                     if self.turn == 2:
-                        cardsInfoBtns['summon'].draw(win)
+                        self.cardsInfoBtns['summon'].draw(win)
                     if cardType == 'spell':
-                        cardsInfoBtns['effect'].draw(win)
+                        self.cardsInfoBtns['effect'].draw(win)
                 elif self.isField:
                     if cardType == 'spell' or cardType == 'monster effect':
-                        cardsInfoBtns['effect'].draw(win)
+                        self.cardsInfoBtns['effect'].draw(win)
                     if self.turn == 3 and "monster" in cardType and self.turn == 3 and not(self.cardSelected.card in self.hasAttacked):
-                        cardsInfoBtns['attack'].draw(win)
+                        self.cardsInfoBtns['attack'].draw(win)

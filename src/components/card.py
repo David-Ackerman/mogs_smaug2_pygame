@@ -78,7 +78,7 @@ class Card(pygame.sprite.Sprite):
 
         cardType = self.card['card_element']
         if self.isBack:
-            img = pygame.image.load('assets/cardTemplates/cardBack.png')
+            img = pygame.image.load('assets/images/cardTemplates/cardBack.png')
             self.surf.fill((0, 0, 0, 0))
             if self.flipped:
                 img = pygame.transform.flip(img, False, True)
@@ -89,9 +89,8 @@ class Card(pygame.sprite.Sprite):
                 self.surf.fill(self.selectionColor)
             else:
                 self.surf.fill((0, 0, 0, 0))
-            cardPath = ('assets/cardTemplates/cardFront-' + cardType +
-                        '.png') if cardType != None else 'assets/cardTemplates/cardFront.png'
-
+            cardPath = ('assets/images/cardTemplates/cardFront-' + cardType +
+                        '.png') if cardType != None else 'assets/images/cardTemplates/cardFront.png'
             bgImg = pygame.image.load(cardPath)
             cardImg = pygame.image.load(self.card['card_image'])
             cardName = self.nameFont.render(

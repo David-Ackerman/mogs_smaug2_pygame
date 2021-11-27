@@ -13,9 +13,6 @@ from src.services.saveDeck import loadDeckOnDisk
 from src.screens.menu import EndDuel
 
 
-BOARD_BG = pygame.image.load("assets/duelBoard.png")
-CARD_HAND = pygame.image.load("assets/cardHand.png")
-SIDE_DETAILS = pygame.image.load("assets/sideDetails.png")
 phase = {
     1: 'Draw Phase',
     2: 'Summon Phase',
@@ -26,25 +23,29 @@ phase = {
 class DuelGame():
     def __init__(self, game, conn: Network, player: int, userName: str, duel: Duel):
         self.n, self.player, self.duel, self.game = conn, player, duel, game
+        self.sideBar = max(self.game.WIDTH * 0.30, 400)
         self.handCardsPos = {'player': [
-            410, self.game.HEIGHT - 150], 'opponent': [self.game.WIDTH - 110, 10]}
+            self.sideBar + 10, self.game.HEIGHT - 150], 'opponent': [self.game.WIDTH - 110, 10]}
         self.deckCardsPos = {'player': [
-            self.game.WIDTH - 120, self.game.HEIGHT - 320], 'opponent': [410, 200]}
+            self.game.WIDTH - 120, self.game.HEIGHT - 320], 'opponent': [self.sideBar + 10, 200]}
         self.graveCardPos = {'player': [
-            self.game.WIDTH - 120, self.game.HEIGHT - 480], 'opponent': [410, 360]}
+            self.game.WIDTH - 120, self.game.HEIGHT - 480], 'opponent': [self.sideBar + 10, 360]}
         self.fieldCardPos = {
-            'playerFront': [600, 500],
+            'playerFront': [self.sideBar + 200, self.game.HEIGHT - 500],
             'opFront': [self.game.WIDTH - 342, 334],
-            'playerSupport': [600, 654],
+            'playerSupport': [self.sideBar + 200, self.game.HEIGHT - 340],
             'opSupport': [self.game.WIDTH - 342, 182],
         }
+        BOARD_BG = pygame.image.load("assets/images/duelBoard.png")
+        CARD_HAND = pygame.image.load("assets/images/cardHand.png")
+        SIDE_DETAILS = pygame.image.load("assets/images/sideDetails.png")
         self.userId, self.username, self.opUsername = userName, '', ''
         self.BOARD_BG = pygame.transform.scale(
-            BOARD_BG, (self.game.WIDTH - 400, self.game.HEIGHT - 320))
+            BOARD_BG, (self.game.WIDTH - self.sideBar, self.game.HEIGHT - 320))
         self.CARD_HAND = pygame.transform.scale(
-            CARD_HAND, (self.game.WIDTH - 400, 160))
+            CARD_HAND, (self.game.WIDTH - self.sideBar, 160))
         self.SIDE_DETAILS = pygame.transform.scale(
-            SIDE_DETAILS, (400, self.game.HEIGHT))
+            SIDE_DETAILS, (self.sideBar, self.game.HEIGHT))
         self.exitBtn = ButtonDuels("X", 10, 10, (250, 20, 20, 127),
                                    'nunito-bold', 45, 45, 8)
         self.lost = False
@@ -76,8 +77,8 @@ class DuelGame():
         self.deckCardsSprite, self.handCardsSprite, self.fieldCardsFrontSprite, self.fieldCardsSupportSprite, self.graveCardsSprite, self.opHandCardsSprite, self.opFieldFrontCardsSprite, self.opFieldSupportCardsSprite, self.opGraveCardsSprite, self.opDeckCardsSprite = pygame.sprite.Group(
         ), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group()
 
-        self.cardsInfo = CardsInfo(
-            self.summonCard, self.changeBattlePhase, self.endPlayerTime, self.setAttack, self.confirmAttack, self.hasAttacked)
+        self.cardsInfo = CardsInfo(self.sideBar, self.game.HEIGHT,
+                                   self.summonCard, self.changeBattlePhase, self.endPlayerTime, self.setAttack, self.confirmAttack, self.hasAttacked)
 
     def decreasingTimer(self):
         while self.run_display:
@@ -465,10 +466,10 @@ class DuelGame():
         opponentCountCardsText = highFont.render(
             str(len(self.opCards['deck'])), True, (230, 230, 230))
         win.blit(
-            self.CARD_HAND, (400, 0))
-        win.blit(self.BOARD_BG, (400, 160))
+            self.CARD_HAND, (self.sideBar, 0))
+        win.blit(self.BOARD_BG, (self.sideBar, 160))
         win.blit(
-            self.CARD_HAND, (400, self.game.HEIGHT - 160))
+            self.CARD_HAND, (self.sideBar, self.game.HEIGHT - 160))
         win.blit(self.SIDE_DETAILS, (0, 0))
         self.cardsInfo.draw(win, self.myTurn)
         self.opDeckCardsSprite.draw(win)
@@ -486,12 +487,12 @@ class DuelGame():
             opponentCountCardsText, (self.deckCardsPos['opponent'][0] + (100/2 - opponentCountCardsText.get_width()/2), self.deckCardsPos['opponent'][1] + 50))
         win.blit(
             countDeckCardsText, (self.deckCardsPos['player'][0] + (100/2 - countDeckCardsText.get_width()/2), self.deckCardsPos['player'][1] + 50))
-        win.blit(userText, (self.game.WIDTH - 100, self.game.HEIGHT - 150))
-        win.blit(lifeText, (self.game.WIDTH - 100, self.game.HEIGHT - 120))
-        win.blit(manaText, (self.game.WIDTH - 100, self.game.HEIGHT - 90))
-        win.blit(opUserText, (400, 10))
-        win.blit(opLifeText, (400, 40))
-        win.blit(opManaText, (400, 70))
+        win.blit(userText, (self.game.WIDTH - 120, self.game.HEIGHT - 150))
+        win.blit(lifeText, (self.game.WIDTH - 120, self.game.HEIGHT - 120))
+        win.blit(manaText, (self.game.WIDTH - 120, self.game.HEIGHT - 90))
+        win.blit(opUserText, (self.sideBar, 10))
+        win.blit(opLifeText, (self.sideBar, 40))
+        win.blit(opManaText, (self.sideBar, 70))
         if self.myTurn:
             timerText = highFont.render(
                 "Tempo: " + str(self.timer), True, (230, 230, 230))

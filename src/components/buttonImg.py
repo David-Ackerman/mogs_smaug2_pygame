@@ -6,14 +6,15 @@ from threading import Timer
 pygame.font.init()
 
 buttons = {
-    'activate': 'assets/buttons/btn_activate',
-    'attack': 'assets/buttons/btn_attack',
-    'attackPhase': 'assets/buttons/btn_attackPhase',
-    'endPhase': 'assets/buttons/btn_endPhase',
-    'left': 'assets/buttons/btn_left',
-    'right': 'assets/buttons/btn_right',
-    'save': 'assets/buttons/btn_save',
-    'summon': 'assets/buttons/btn_summon',
+    'activate': 'assets/images/buttons/btn_activate',
+    'attack': 'assets/images/buttons/btn_attack',
+    'attackPhase': 'assets/images/buttons/btn_attackPhase',
+    'endPhase': 'assets/images/buttons/btn_endPhase',
+    'left': 'assets/images/buttons/btn_left',
+    'right': 'assets/images/buttons/btn_right',
+    'save': 'assets/images/buttons/btn_save',
+    'summon': 'assets/images/buttons/btn_summon',
+    'confirm': 'assets/images/buttons/btn_confirm',
 }
 
 

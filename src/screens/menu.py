@@ -28,7 +28,7 @@ class Menu:
 
     def draw_cursor(self):
         self.game.draw_text("*", 30, self.cursor_rect.x,
-                            self.cursor_rect.y, 'magic')
+                            self.cursor_rect.y, (60, 60, 60), font='magic')
 
     def blit_screen(self, scroll=0):
         self.game.window.blit(self.game.window, (0, scroll))
@@ -74,17 +74,27 @@ class MainMenu(Menu):
 
     def render_self(self):
         self.run_display = True
+        mainImg = pygame.image.load('assets/images/capa.png')
+        mainImg = pygame.transform.scale(
+            mainImg, (self.game.DISPLAY_W, self.game.DISPLAY_H))
+        self.game.music.load("assets/sounds/dramatic.wav")
+        self.game.music.play()
         while self.run_display:
             self.game.check_events()
             self.check_input()
-            self.game.window.fill(self.game.BLACK)
+            self.game.window.blit(mainImg, (0, 0))
             self.game.draw_text(
-                "main menu", 80, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 - 180)
-            self.game.draw_text("Start Game", 40, self.startx, self.starty)
-            self.game.draw_text("Options", 40, self.optionsx, self.optionsy)
-            self.game.draw_text("Deck", 40, self.deckx, self.decky)
-            self.game.draw_text("Help", 40, self.helpx, self.helpy)
-            self.game.draw_text("Credits", 40, self.creditsx, self.creditsy)
+                "main menu", 80, self.game.DISPLAY_W / 2, self.game.DISPLAY_H / 2 - 180, (30, 30, 30))
+            self.game.draw_text("Start Game", 40, self.startx,
+                                self.starty, (60, 60, 60))
+            self.game.draw_text("Options", 40, self.optionsx,
+                                self.optionsy, (60, 60, 60))
+            self.game.draw_text("Deck", 40, self.deckx,
+                                self.decky, (60, 60, 60))
+            self.game.draw_text("Help", 40, self.helpx,
+                                self.helpy, (60, 60, 60))
+            self.game.draw_text("Credits", 40, self.creditsx,
+                                self.creditsy, (60, 60, 60))
             self.draw_cursor(),
             self.blit_screen()
 
@@ -326,7 +336,7 @@ class CreditsMenu(Menu):
 
     def render_self(self):
         self.run_display = True
-        credits = pygame.image.load('assets/creditos.png')
+        credits = pygame.image.load('assets/images/creditos.png')
         credits = pygame.transform.scale(credits, (self.game.DISPLAY_W, 500))
         scroll = 0
         clock = pygame.time.Clock()
@@ -353,7 +363,7 @@ class HelpMenu(Menu):
 
     def render_self(self):
         self.run_display = True
-        help = pygame.image.load('assets/help.png')
+        help = pygame.image.load('assets/images/help.png')
         help = pygame.transform.scale(
             help, (self.game.DISPLAY_W, self.game.DISPLAY_H))
         clock = pygame.time.Clock()

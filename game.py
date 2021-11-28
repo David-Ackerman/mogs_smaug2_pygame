@@ -1,11 +1,11 @@
-from src.services.saveDeck import loadDeckOnDisk
-from src.services.getFont import loadCustomFont
-from src.screens.s_duel import DuelGame
-from src.screens.menu import *
-from client import Client
-from subprocess import Popen
 import pygame
 from pygame.locals import *
+from subprocess import Popen
+from src.services.saveDeck import loadDeckOnDisk
+from src.services.getFont import loadCustomFont
+from src.screens.client import Client
+from src.screens.menu import *
+from src.services.sounds import Sound
 from src.services.compressImg import compressAssets, decompressAssets
 
 
@@ -30,9 +30,7 @@ class Game:
         self.playerDeck = response["deck"] if response['hasDeck'] else []
         self.userName = response['userName'] if response['hasDeck'] else ''
         self.volume = response['options']['vol'] if response['hasDeck'] else 0.1
-        self.music = pygame.mixer.music
-        self.music.set_volume(self.volume)
-
+        self.sound = Sound(self.volume)
         self.main_menu = MainMenu(self)
         self.help_menu = HelpMenu(self)
         self.deck_menu = DeckMenu(self, self.playerDeck)
@@ -54,7 +52,6 @@ class Game:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.finish()
-
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_presses = pygame.mouse.get_pressed()
                 if mouse_presses[0]:

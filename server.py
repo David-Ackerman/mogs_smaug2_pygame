@@ -1,13 +1,19 @@
 import pickle
 import socket
 from _thread import *
-from src.server.duel import Duel
-from src.server.combat import Combat
+from src.p_server.combat import Combat
+from duel import Duel
 
-hostname = socket.gethostname()
-local_ip = socket.gethostbyname(hostname)
+from subprocess import check_output
 
-server = local_ip
+
+d = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+d.connect(("8.8.8.8", 80))
+ip = d.getsockname()[0]
+d.close()
+
+
+server = ip
 port = 5555
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -17,7 +23,7 @@ try:
 except socket.error as e:
     str(e)
 
-s.listen(4)
+s.listen(2)
 print("Waiting for a connection, server started")
 
 connected = set()
@@ -34,10 +40,10 @@ def threaded_client(conn, p, gameId: int):
     }))
     while True:
         try:
-            data = pickle.loads(conn.recv(8192))
+            data = pickle.loads(conn.recv(12288))
             if gameId in duels and gameId in combats:
-                game: Duel = duels[gameId]
-                combat: Combat = combats[gameId]
+                game = duels[gameId]
+                combat = combats[gameId]
                 combat.game = game
                 if not data:
                     break

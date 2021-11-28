@@ -2,8 +2,8 @@ from typing import Tuple
 import typing
 import pygame
 from threading import Timer
+from src.services.sounds import Sound
 
-pygame.font.init()
 
 buttons = {
     'activate': 'assets/images/buttons/btn_activate',
@@ -19,8 +19,9 @@ buttons = {
 
 
 class ButtonImage:
-    def __init__(self, img: typing.Literal['activate', 'attack', 'attackPhase', 'endPhase', 'left', 'right', 'save', 'summon'], x: int, y: int):
+    def __init__(self, img: typing.Literal['activate', 'attack', 'attackPhase', 'endPhase', 'left', 'right', 'save', 'summon'], x: int, y: int, sound: Sound):
         self.x = x
+        self.sound = sound
         self.y = y
         self.imgPath = buttons[img]
         self.image = pygame.image.load(self.imgPath + '.png')
@@ -36,6 +37,7 @@ class ButtonImage:
         y1 = pos[1]
 
         if self.x <= x1 <= self.x + self.image.get_width() and self.y <= y1 <= self.y + self.image.get_height():
+            self.sound.playSound('click')
             self.image = pygame.image.load(self.imgPath + '_press.png')
             t = Timer(0.2, self.despress)
             t.start()

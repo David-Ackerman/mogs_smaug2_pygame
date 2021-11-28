@@ -2,12 +2,12 @@ import random
 import _thread
 from typing import List, Tuple
 import pygame
-from network import Network
+from src.p_server.network import Network
 from src.components.button import ButtonDuels
 from src.components.card import Card
 from src.components.cardsInfo import CardsInfo
 from src.interfaces.card_model import Deck
-from src.server.duel import Duel
+from duel import Duel
 from src.services.getFont import loadCustomFont
 from src.services.saveDeck import loadDeckOnDisk
 from src.screens.menu import EndDuel
@@ -77,7 +77,7 @@ class DuelGame():
         self.deckCardsSprite, self.handCardsSprite, self.fieldCardsFrontSprite, self.fieldCardsSupportSprite, self.graveCardsSprite, self.opHandCardsSprite, self.opFieldFrontCardsSprite, self.opFieldSupportCardsSprite, self.opGraveCardsSprite, self.opDeckCardsSprite = pygame.sprite.Group(
         ), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group(), pygame.sprite.Group()
 
-        self.cardsInfo = CardsInfo(self.sideBar, self.game.HEIGHT,
+        self.cardsInfo = CardsInfo(self.sideBar, self.game.HEIGHT, self.game,
                                    self.summonCard, self.changeBattlePhase, self.endPlayerTime, self.setAttack, self.confirmAttack, self.hasAttacked)
 
     def decreasingTimer(self):
@@ -310,6 +310,7 @@ class DuelGame():
             return
 
         if len(self.handCards) <= 5:
+            self.game.sound.playSound('click')
             self.cards['hand'].append(self.cards['deck'].pop())
             self.handCards.append(self.deckCards.pop())
             self.handCards[-1].isBack = False
@@ -536,6 +537,8 @@ class DuelGame():
 
                 self.cardsInfo.checkClicks(pos)
                 if self.exitBtn.click(pos):
+                    self.game.sound.playSound('endGame')
+
                     self.run_display = False
                     self.n.send({'action': 'quit'})
                     break
@@ -543,6 +546,8 @@ class DuelGame():
                     self.attackingCard.selectCard()
                     for card in self.opFieldCards['front']:
                         if card.click(pos):
+                            self.game.sound.playSound('endGame')
+
                             self.selectEnemyCard(card)
                             break
                 elif self.deckClick(pos):
@@ -551,18 +556,23 @@ class DuelGame():
                     i, j, h = 0, 0, 0
                     for card in self.handCards:
                         if card.click(pos):
+                            self.game.sound.playSound('viewCardInfo')
+
                             self.showCardsInfo(
                                 self.handCards, isMyHand=True, cardPos=i)
                             break
                         i += 1
                     for card in self.fieldCards['front']:
                         if card.click(pos):
+                            self.game.sound.playSound('viewCardInfo')
+
                             self.showCardsInfo(
                                 self.fieldCards['front'], isField=True, cardPos=j)
                             break
                         j += 1
                     for card in self.fieldCards['support']:
                         if card.click(pos):
+                            self.game.sound.playSound('viewCardInfo')
                             self.showCardsInfo(
                                 self.fieldCards['support'], isField=True, cardPos=h)
                             break

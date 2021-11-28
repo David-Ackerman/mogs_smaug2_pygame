@@ -1,5 +1,6 @@
 from typing import Tuple
 import pygame
+from src.services.sounds import Sound
 
 from src.interfaces.card_model import Deck
 from src.services.getFont import loadCustomFont
@@ -41,7 +42,6 @@ class Card(pygame.sprite.Sprite):
         self.isSelected = isSelected
         self.selectionColor = selectionColor
         self.coords = CARD_COMPOSE_COORD[self.selection]
-
         self.myfont = loadCustomFont(12 if isDeckMenu else 7, 'nunito')
         self.nameFont = loadCustomFont(14 if isDeckMenu else 8, 'nunito-bold')
         self.surf = pygame.Surface(

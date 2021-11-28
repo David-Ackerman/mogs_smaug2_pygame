@@ -3,7 +3,6 @@ from typing import List, Tuple
 
 import pygame
 from src.interfaces.card_model import Deck
-from src.components.button import ButtonDuels
 from src.components.buttonImg import ButtonImage
 from src.components.card import Card
 from src.services.getFont import loadCustomFont
@@ -11,22 +10,23 @@ from src.services.renders import blit_complex_text
 
 
 class CardsInfo:
-    def __init__(self, width, height, summon, battlePhase, endPhase, attack, confirmattack, hasAttacked):
+    def __init__(self, width, height, game, summon, battlePhase, endPhase, attack, confirmattack, hasAttacked):
         self.cards = []
+        self.game = game
         self.width, self.height, self.summonCard, self.battlePhase, self.endPhase, self.attack, self.confirmattack = width, height, summon, battlePhase, endPhase, attack, confirmattack
 
         self.pos, self.turn, self.round = -1, 1, 0
         self.isField, self.isHand, self.isMyTurn, self.isAttack, self.isEnemy, self.cardSelected = False, False, True, False, False, None
         self.hasAttacked: List[Deck] = hasAttacked
         self.cardsInfoBtns = {
-            'summon': ButtonImage('summon', 20, self.height - 95),
-            'attack': ButtonImage('attack', self.width/2 - 60, self.height - 95),
-            'confirmAttack': ButtonImage('confirm', self.width/2 - 60, self.height - 95),
-            'effect': ButtonImage('activate', self.width - 120, self.height - 95),
-            'phaseAttack': ButtonImage('attackPhase', 20, self.height - 50),
-            'endTurn': ButtonImage('endPhase', self.width - 200, self.height - 50),
-            'goLeft': ButtonImage('left', 20, (self.height / 2) - 20),
-            'goRight': ButtonImage('right', self.width - 50, (self.height / 2) - 20),
+            'summon': ButtonImage('summon', 20, self.height - 95, self.game.sound),
+            'attack': ButtonImage('attack', self.width/2 - 60, self.height - 95, self.game.sound),
+            'confirmAttack': ButtonImage('confirm', self.width/2 - 60, self.height - 95, self.game.sound),
+            'effect': ButtonImage('activate', self.width - 120, self.height - 95, self.game.sound),
+            'phaseAttack': ButtonImage('attackPhase', 20, self.height - 50, self.game.sound),
+            'endTurn': ButtonImage('endPhase', self.width - 200, self.height - 50, self.game.sound),
+            'goLeft': ButtonImage('left', 20, (self.height / 2) - 40, self.game.sound),
+            'goRight': ButtonImage('right', self.width - 50, (self.height / 2) - 40, self.game.sound),
         }
 
     def changeCard(self, action: str):
@@ -86,14 +86,15 @@ class CardsInfo:
 
             cardType = self.cardSelected.card['card_type']
             cardImg = pygame.image.load(self.cardSelected.card['card_image'])
-            cardImg = pygame.transform.scale(cardImg, (self.width - 30, 400))
+            cardImg = pygame.transform.scale(
+                cardImg, (self.width - 30, self.width - 100))
             name = self.font.render(
                 self.cardSelected.card['card_name'], True, (233, 233, 233))
             cust = self.font.render(
                 "Custo de mana: " + str(self.cardSelected.card['card_cust']), True, (233, 233, 233))
             win.blit(cardImg, (15, 78))
-            win.blit(name, (18, 480))
-            win.blit(cust, (18, 515))
+            win.blit(name, (18, self.width - 10))
+            win.blit(cust, (18, self.width + 30))
             if self.cardSelected.card['card_type'] != 'spell' and self.cardSelected.card['card_type'] != 'trap':
                 element = self.font.render(
                     "Elemento: " + self.cardSelected.card['card_element'], True, (233, 233, 233))
@@ -101,12 +102,12 @@ class CardsInfo:
                     "Ataque: " + str(self.cardSelected.card['card_attack']), True, (233, 233, 233))
                 defense = self.font.render(
                     "Defesa: " + str(self.cardSelected.card['card_def']), True, (233, 233, 233))
-                win.blit(element, (18, 550))
-                win.blit(attack, (238, 515))
-                win.blit(defense, (238, 550))
+                win.blit(element, (18, self.width + 60))
+                win.blit(attack, (238, self.width + 60))
+                win.blit(defense, (238, self.width + 30))
 
             blit_complex_text(
-                win, "Descrição: " + self.cardSelected.card['card_description'], (18, 585), self.font, self.width - 34, (233, 233, 233))
+                win, "Descrição: " + self.cardSelected.card['card_description'], (18, self.width + 100), self.font, self.width - 34, (233, 233, 233))
 
             if len(self.cards) >= 2 and self.pos > 0:
                 self.cardsInfoBtns['goLeft'].draw(win)

@@ -1,2 +1,5 @@
 .vscode
+build
+dist
+pitch
 __pycache__

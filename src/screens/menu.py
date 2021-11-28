@@ -25,6 +25,7 @@ class Menu:
         self.run_display = True
         self.cursor_rect = pygame.Rect(0, 0, 20, 20)
         self.offset = -100
+        self.game.sound.playSongs()
 
     def draw_cursor(self):
         self.game.draw_text("*", 30, self.cursor_rect.x,
@@ -32,6 +33,7 @@ class Menu:
 
     def blit_screen(self, scroll=0):
         self.game.window.blit(self.game.window, (0, scroll))
+        self.game.sound.continueSongs()
         pygame.display.flip()
         self.game.reset_keys()
 
@@ -77,8 +79,6 @@ class MainMenu(Menu):
         mainImg = pygame.image.load('assets/images/capa.png')
         mainImg = pygame.transform.scale(
             mainImg, (self.game.DISPLAY_W, self.game.DISPLAY_H))
-        self.game.music.load("assets/sounds/dramatic.wav")
-        self.game.music.play()
         while self.run_display:
             self.game.check_events()
             self.check_input()
@@ -100,6 +100,8 @@ class MainMenu(Menu):
 
     def move_cursor(self):
         if self.game.DOWN_KEY:
+            self.game.sound.playSound('click')
+
             if self.state == "Start":
                 self.cursor_rect.midtop = (
                     self.optionsx + self.offset, self.optionsy)
@@ -121,6 +123,7 @@ class MainMenu(Menu):
                     self.startx + self.offset, self.starty)
                 self.state = "Start"
         elif self.game.UP_KEY:
+            self.game.sound.playSound('click')
             if self.state == "Start":
                 self.cursor_rect.midtop = (
                     self.creditsx + self.offset, self.creditsy)
@@ -145,6 +148,7 @@ class MainMenu(Menu):
     def check_input(self):
         self.move_cursor()
         if self.game.START_KEY:
+            self.game.sound.playSound('select')
             if self.state == "Start":
                 self.game.curr_screen = self.game.player
             elif self.state == "Options":
@@ -174,10 +178,8 @@ class OptionsMenu(Menu):
                          ButtonDuels('3', self.buttonsx + 80, self.buttonsY, (200, 200, 200), 'rooters', 30, 30, 10, 25, textColor=(20, 20, 20)), ButtonDuels('4', self.buttonsx + 120, self.buttonsY, (200, 200, 200), 'rooters', 30, 30, 10, 25, textColor=(20, 20, 20)), ButtonDuels('5', self.buttonsx + 160, self.buttonsY, (200, 200, 200), 'rooters', 30, 30, 10, 25, textColor=(20, 20, 20))]
 
     def render_self(self):
-        self.game.music.stop()
         self.run_display = True
-        self.sound = pygame.mixer.Sound('assets/sounds/dramatic.wav')
-        self.button = ButtonImage('save', 1100, 820)
+        self.button = ButtonImage('save', 1100, 820, self.game.sound)
         self.input_rect = pygame.Rect(
             self.userx + 74, self.usery - 20, 200, 36)
         color_active = (233, 233, 233)
@@ -231,8 +233,7 @@ class OptionsMenu(Menu):
                         for vol in self.btns_vol:
                             if vol.click(pos):
                                 self.volume = vols[vol.text]
-                                self.sound.set_volume(self.volume)
-                                self.sound.play(0, 1000)
+                                self.game.sound.updateVol(self.volume)
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     self.game.goToMenuScreen()
@@ -278,7 +279,7 @@ class DeckMenu(Menu):
         self.run_display = True
         self.updateCardsPos()
         self.button = ButtonImage(
-            'save', self.game.WIDTH - 160, self.game.HEIGHT - 80)
+            'save', self.game.WIDTH - 160, self.game.HEIGHT - 80, self.game.sound)
 
         clock = pygame.time.Clock()
         while self.run_display:
@@ -312,6 +313,7 @@ class DeckMenu(Menu):
                     clicked_sprites = [
                         s for s in self.all_sprites_list if s.rect.collidepoint(pos)]
                     if len(clicked_sprites) > 0:
+                        self.game.sound.playSound('viewCardInfo')
                         clicked_sprites[0].setSelectedOnDeckMenu()
                         if clicked_sprites[0].isSelected:
                             self.playerDeck.append(clicked_sprites[0].card)

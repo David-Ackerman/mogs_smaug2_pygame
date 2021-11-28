@@ -1,6 +1,7 @@
 from threading import Timer
 from typing import Tuple
 import pygame
+from src.services.sounds import Sound
 from src.interfaces.card_model import Fonts
 
 from src.services.getFont import loadCustomFont
